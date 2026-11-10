@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Carnet de route</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+:root{--bg:#eef2f1;--card:#fff;--ink:#14262c;--mute:#5d7077;--line:#d3dcdb;--sea:#1f6f78;--gorse:#d9a441;--bad:#b3402f;--me:#d5ebe9}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1b1f;--card:#17272c;--ink:#e6eeee;--mute:#8fa4a9;--line:#2a3d43;--sea:#4db3bd;--gorse:#e6b957;--bad:#e8806f;--me:#1f4249}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,sans-serif}
+header{display:flex;gap:8px;align-items:center;padding:8px 12px;height:52px;border-bottom:1px solid var(--line)}
+#title{flex:1;min-width:0;font:600 18px Georgia,serif;border:0;background:none;color:var(--ink)}
+button,input,textarea,select{font:inherit;color:var(--ink)}
+button{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+button.pri{background:var(--sea);border-color:var(--sea);color:#fff}
+button.on{background:var(--gorse);border-color:var(--gorse);color:#14262c}
+button.danger{color:var(--bad)}
+input,textarea,select{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 8px;width:100%}
+:focus-visible{outline:2px solid var(--sea);outline-offset:1px}
+#st{font-size:12px;color:var(--mute);white-space:nowrap}
+main{display:grid;grid-template-rows:42vh 1fr;height:calc(100dvh - 52px)}
+@media(min-width:900px){main{grid-template-columns:430px 1fr;grid-template-rows:1fr}#mapwrap{order:2}}
+#mapwrap{display:flex;flex-direction:column;min-height:0}
+#bar{display:flex;gap:6px;padding:6px 8px;overflow-x:auto;border-bottom:1px solid var(--line)}
+#bar button{white-space:nowrap}
+#map{flex:1;min-height:0}
+#panel{overflow:auto;padding:10px 12px;min-height:0}
+.tabs{display:flex;gap:6px;margin-bottom:10px}.tabs button{flex:1}
+.card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:6px;padding:8px;margin-bottom:8px}
+.card.on{border-left-color:var(--sea)}
+.row{display:flex;gap:6px;align-items:center;margin:4px 0}.row input[type=date]{width:150px}
+.meta{font-size:13px;color:var(--mute)}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.wp{width:22px;height:22px;border-radius:50%;color:#fff;font:600 11px/22px system-ui;text-align:center;border:2px solid #fff;box-shadow:0 0 3px #0008}
+.sum{font-size:14px;margin:0 0 10px;color:var(--mute)}
+#msgs{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.m{max-width:85%;padding:6px 10px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
+.m.me{align-self:flex-end;background:var(--me)}
+.m small{display:block;color:var(--mute);font-size:11px}
+.lodg{margin:6px 0}.lodg input{margin-bottom:4px}
+input[type=checkbox]{width:auto}.chk{display:flex;gap:6px;align-items:center;white-space:nowrap}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;display:none;z-index:9999;max-width:90vw}
+dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;max-width:440px;width:92vw}
+dialog label{display:block;margin:8px 0 2px;font-size:13px;color:var(--mute)}
+dialog p{font-size:13px;color:var(--mute)}
+</style>
+</head>
+<body>
+<header>
+ <input id="title" aria-label="Titre du voyage">
+ <span id="st"></span>
+ <button id="bset" aria-label="Réglages">⚙</button>
+ <button id="bsave" class="pri">Enregistrer</button>
+</header>
+<main>
+ <div id="mapwrap">
+  <div id="bar">
+   <button id="vall">Tout le parcours</button>
+   <button id="vday">Étape choisie</button>
+   <button id="bdraw">✏ Tracer</button>
+   <button id="broute">🥾 Itinéraire à pied</button>
+   <button id="bundo">↶ Retirer le dernier point</button>
+  </div>
+  <div id="map"></div>
+ </div>
+ <div id="panel">
+  <div class="tabs"><button data-t="stages" class="on">Étapes</button><button data-t="chat">Discussion</button></div>
+  <section id="p-stages"><p class="sum" id="sum"></p><div id="list"></div><button id="badd">+ Ajouter une étape</button></section>
+  <section id="p-chat" hidden>
+   <div id="msgs"></div>
+   <div class="row"><input id="mtxt" placeholder="Écrire un message…"><button id="msend" class="pri">Envoyer</button></div>
+   <p class="meta"><button id="bref">Actualiser</button> Les messages apparaissent chez l'autre après son actualisation (auto toutes les 60 s).</p>
+  </section>
+ </div>
+</main>
+<dialog id="dlg">
+ <h3 style="margin:0 0 4px">Réglages</h3>
+ <label>Qui es-tu ?</label><select id="c-me"></select>
+ <label>Participants (séparés par des virgules)</label><input id="c-parts">
+ <label>Propriétaire du dépôt GitHub</label><input id="c-owner">
+ <label>Nom du dépôt</label><input id="c-repo">
+ <label>Branche</label><input id="c-branch">
+ <label>Fichier de données</label><input id="c-path">
+ <label>Token GitHub</label><input id="c-token" type="password" autocomplete="off">
+ <p>Crée un token « fine-grained » limité à ce dépôt, avec la permission Contents : Read and write. Il reste uniquement dans ce navigateur. Chaque participant utilise le sien.</p>
+ <div class="row"><button id="c-ok" class="pri">Valider</button><button id="c-x">Fermer</button></div>
+</dialog>
+<div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const COL=['#e4572e','#2e86ab','#76b041','#a23b72','#d9a441','#17bebb','#7768ae','#d1495b'];
+const DEF={title:'Mon voyage',participants:['Moi','Ami(e)'],stages:[],messages:[]};
+function guess(){const h=location.hostname,p=location.pathname.split('/')[1]||'';
+ return h.endsWith('github.io')?{owner:h.split('.')[0],repo:(p&&!p.includes('.'))?p:h}:{}}
+const C=Object.assign({path:'data.json',branch:'main'},guess(),JSON.parse(localStorage.getItem('tp_cfg')||'{}'));
+let D=structuredClone(DEF),sha=null,sel=null,view='all',draw=false,dirty=false;
+
+/* ---------- GitHub ---------- */
+const api=()=>`https://api.github.com/repos/${C.owner}/${C.repo}/contents/${C.path}`;
+const hdr=()=>({Authorization:'Bearer '+C.token,Accept:'application/vnd.github+json'});
+const hasGh=()=>C.token&&C.owner&&C.repo;
+async function ghGet(){
+ const r=await fetch(api()+'?ref='+C.branch+'&t='+Date.now(),{headers:hdr(),cache:'no-store'});
+ if(!r.ok)throw new Error(r.status);
+ const j=await r.json();
+ return{sha:j.sha,data:JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))))};
+}
+async function ghPut(){
+ const body={message:'Mise à jour par '+(C.me||'?'),branch:C.branch,
+  content:btoa(unescape(encodeURIComponent(JSON.stringify(D,null,1))))};
+ if(sha)body.sha=sha;
+ const r=await fetch(api(),{method:'PUT',headers:hdr(),body:JSON.stringify(body)});
+ if(!r.ok)throw new Error(r.status);
+ sha=(await r.json()).content.sha;
+}
+async function load(){
+ try{
+  if(!hasGh())throw 0;
+  const r=await ghGet();D=r.data;sha=r.sha;
+ }catch(e){
+  try{D=await (await fetch(C.path+'?t='+Date.now())).json()}catch(e2){D=structuredClone(DEF)}
+ }
+ D.stages=D.stages||[];D.messages=D.messages||[];
+ if(!C.me)C.me=D.participants[0];
+ sel=sel||(D.stages[0]&&D.stages[0].id);
+}
+function mergeMsgs(remote){
+ const ids=new Set(D.messages.map(m=>m.id));
+ remote.forEach(m=>{if(!ids.has(m.id))D.messages.push(m)});
+ D.messages.sort((a,b)=>a.ts-b.ts);
+}
+async function save(){
+ if(!hasGh()){openSet();return toast('Renseigne le token GitHub pour enregistrer.')}
+ status('Enregistrement…');
+ try{
+  try{const r=await ghGet();if(r.sha!==sha){mergeMsgs(r.data.messages||[]);sha=r.sha}}
+  catch(e){if(e.message!=='404')throw e;sha=null}
+  await ghPut();dirty=false;status('✓ Enregistré');renderChat();
+ }catch(e){status('⚠ Échec');toast('Enregistrement impossible (erreur '+e.message+'). Vérifie le token et le dépôt.')}
+}
+function changed(){dirty=true;status('● Non enregistré');scheduleNames()}
+function status(t){$('#st').textContent=t}
+function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',4000)}
+
+/* ---------- Carte ---------- */
+const map=L.map('map').setView([48.78,-3.3],10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
+const layer=L.layerGroup().addTo(map);
+const cur=()=>D.stages.find(s=>s.id===sel);
+const key=s=>s.points.map(p=>p.join(',')).join(';');
+const okRoute=s=>s.route&&s.routeKey===key(s);
+function dist(s){if(okRoute(s))return s.routeKm;let d=0;for(let i=1;i<s.points.length;i++)d+=map.distance(s.points[i-1],s.points[i]);return d/1000}
+function drawMap(fit){
+ layer.clearLayers();const all=[];
+ D.stages.forEach((s,i)=>{
+  const col=COL[i%COL.length],show=view==='all'||s.id===sel;
+  if(!show||!s.points.length)return;
+  all.push(...s.points);
+  if(okRoute(s))L.polyline(s.route,{color:col,weight:5,opacity:.9}).addTo(layer);
+  else if(s.points.length>1)L.polyline(s.points,{color:col,weight:4,opacity:.8,dashArray:'6 8'}).addTo(layer);
+  if(view==='all'){
+   L.circleMarker(s.points[0],{radius:7,color:'#fff',weight:2,fillColor:col,fillOpacity:1}).bindTooltip(String(i+1),{permanent:true,direction:'center',className:'x'}).addTo(layer);
+  }else{
+   s.points.forEach((p,j)=>{
+    const m=L.marker(p,{draggable:true,icon:L.divIcon({className:'',iconSize:[22,22],html:`<div class="wp" style="background:${col}">${j+1}</div>`})}).addTo(layer);
+    m.on('dragend',e=>{const l=e.target.getLatLng();s.points[j]=[l.lat,l.lng];changed();drawMap();renderList()});
+    const b=document.createElement('button');b.textContent='Supprimer ce point';b.className='danger';
+    b.onclick=()=>{s.points.splice(j,1);map.closePopup();changed();drawMap();renderList()};
+    m.bindPopup(b);
+   });
+  }
+ });
+ if(fit&&all.length)map.fitBounds(all,{padding:[30,30]});
+ $('#vall').classList.toggle('on',view==='all');
+ $('#vday').classList.toggle('on',view==='day');
+ $('#bdraw').classList.toggle('on',draw);
+ map.getContainer().style.cursor=draw?'crosshair':'';
+}
+map.on('click',e=>{
+ if(!draw)return;
+ const s=cur();if(!s)return toast('Ajoute d’abord une étape.');
+ if(view!=='day'){view='day'}
+ s.points.push([+e.latlng.lat.toFixed(5),+e.latlng.lng.toFixed(5)]);
+ changed();drawMap();renderList();
+});
+$('#vall').onclick=()=>{view='all';drawMap(true)};
+$('#vday').onclick=()=>{view='day';drawMap(true)};
+$('#bdraw').onclick=()=>{draw=!draw;if(draw)view='day';drawMap();if(draw)toast('Touche la carte pour ajouter des points de passage.')};
+/* Itinéraire à pied : routage OSM (FOSSGIS), par blocs de 20 repères */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function routeStage(s){
+ if(!s||s.points.length<2)return toast('Place au moins 2 repères sur la carte (✏ Tracer).');
+ toast('Calcul de l’itinéraire à pied…');
+ try{
+  const out=[];let km=0;
+  for(let i=0;i<s.points.length-1;i+=19){
+   const co=s.points.slice(i,i+20).map(p=>p[1]+','+p[0]).join(';');
+   const r=await fetch('https://routing.openstreetmap.de/routed-foot/route/v1/driving/'+co+'?overview=full&geometries=geojson');
+   const j=await r.json();if(j.code!=='Ok')throw 0;
+   km+=j.routes[0].distance/1000;
+   j.routes[0].geometry.coordinates.forEach(([lo,la])=>{const q=[+la.toFixed(5),+lo.toFixed(5)];if(!out.length||map.distance(out[out.length-1],q)>12)out.push(q)});
+  }
+  s.route=out;s.routeKm=km;s.routeKey=key(s);changed();renderList();drawMap();
+  toast('Itinéraire calculé : '+km.toFixed(1)+' km');
+ }catch(e){toast('Calcul impossible : service indisponible ou aucun chemin entre ces repères.')}
+}
+$('#broute').onclick=()=>routeStage(cur());
+/* Nom d’étape automatique : « ville de départ - ville d’arrivée » (Nominatim) */
+let nt;function scheduleNames(){clearTimeout(nt);nt=setTimeout(autoNames,1500)}
+async function place(p){
+ const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=12&accept-language=fr&lat='+p[0]+'&lon='+p[1]);
+ const a=(await r.json()).address||{};
+ return a.city||a.town||a.village||a.municipality||a.hamlet||null;
+}
+async function autoNames(){
+ for(const s of D.stages){
+  if(!s.auto||s.points.length<2)continue;
+  const A=s.points[0],B=s.points[s.points.length-1],k=A+'|'+B;
+  if(s.geoKey===k)continue;
+  try{
+   const a=await place(A);await sleep(1100);const b=await place(B);
+   if(a&&b){s.name=a+' - '+b;s.geoKey=k;dirty=true;status('● Non enregistré');
+    const el=document.querySelector('.card[data-id="'+s.id+'"] [data-f=name]');if(el)el.value=s.name}
+  }catch(e){}
+  await sleep(1100);
+ }
+}
+$('#bundo').onclick=()=>{const s=cur();if(s&&s.points.length){s.points.pop();changed();drawMap();renderList()}};
+
+/* ---------- Étapes ---------- */
+function fmtD(d){return d?new Date(d+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):''}
+function renderList(){
+ renderSum();
+ $('#list').innerHTML=D.stages.map((s,i)=>`<div class="card ${s.id===sel?'on':''}" data-id="${s.id}">
+  <div class="row"><span class="dot" style="background:${COL[i%COL.length]}"></span><input data-f="name" value="${esc(s.name)}"><input type="date" data-f="date" value="${esc(s.date)}"></div>
+  <div class="meta">${dist(s).toFixed(1)} km · ${s.points.length} repère(s) · ${okRoute(s)?'itinéraire à pied':s.route?'itinéraire à recalculer':'ligne droite'}</div>
+  <div class="lodg"><div class="meta">Hébergement</div>
+  <input data-l="name" placeholder="Nom" value="${esc((s.lodging||{}).name)}">
+  <input data-l="address" placeholder="Adresse" value="${esc((s.lodging||{}).address)}">
+  <div class="row"><input data-l="price" type="number" min="0" step="1" placeholder="Prix total (€)" value="${esc((s.lodging||{}).price)}"><label class="chk"><input type="checkbox" data-l="booked" ${(s.lodging||{}).booked?'checked':''}> Réservé</label></div></div>
+  <textarea data-f="notes" rows="2" placeholder="Notes : ravitaillement, marées, météo…">${esc(s.notes)}</textarea>
+  <div class="row" style="flex-wrap:wrap"><button data-a="view">Voir</button><button data-a="route">🥾 Itinéraire à pied</button><button data-a="auto">Nom auto</button><button data-a="up" aria-label="Monter">↑</button><button data-a="down" aria-label="Descendre">↓</button><button data-a="del" class="danger">Supprimer</button></div>
+ </div>`).join('')||'<p class="meta">Aucune étape. Ajoutes-en une pour commencer.</p>';
+}
+$('#list').addEventListener('input',e=>{
+ const c=e.target.closest('.card'),f=e.target.dataset.f,l=e.target.dataset.l;if(!c||!(f||l))return;
+ const s=D.stages.find(x=>x.id===c.dataset.id);
+ if(l){s.lodging=s.lodging||{name:'',address:'',price:'',booked:false};s.lodging[l]=e.target.type==='checkbox'?e.target.checked:e.target.value;changed();renderSum();return}
+ s[f]=e.target.value;if(f==='name')s.auto=false;changed();
+ if(f==='date')renderSum();
+});
+function renderSum(){
+ const tot=D.stages.reduce((a,s)=>a+dist(s),0);
+ const ds=D.stages.map(s=>s.date).filter(Boolean).sort();
+ const lg=D.stages.map(s=>s.lodging||{}),pr=lg.reduce((a,l)=>a+(+l.price||0),0),bk=lg.filter(l=>l.booked).length;
+ $('#sum').textContent=`${D.stages.length} étape(s) · ${tot.toFixed(1)} km`+(ds.length?` · du ${fmtD(ds[0])} au ${fmtD(ds[ds.length-1])}`:'')+(pr?` · hébergement ${pr} €`:'')+` · ${bk}/${D.stages.length} réservé(s)`;
+}
+$('#list').addEventListener('click',e=>{
+ const c=e.target.closest('.card'),a=e.target.dataset.a;if(!c)return;
+ const id=c.dataset.id,i=D.stages.findIndex(s=>s.id===id);
+ if(!a){sel=id;document.querySelectorAll('.card').forEach(x=>x.classList.toggle('on',x.dataset.id===id));if(view==='day')drawMap(true);return}
+ sel=id;
+ if(a==='view'){view='day';drawMap(true)}
+ if(a==='route'){routeStage(D.stages[i]);return}
+ if(a==='auto'){D.stages[i].auto=true;D.stages[i].geoKey=null;scheduleNames();toast('Nom calculé à partir des repères…');return}
+ if(a==='up'&&i>0){[D.stages[i-1],D.stages[i]]=[D.stages[i],D.stages[i-1]];changed()}
+ if(a==='down'&&i<D.stages.length-1){[D.stages[i+1],D.stages[i]]=[D.stages[i],D.stages[i+1]];changed()}
+ if(a==='del'&&confirm('Supprimer cette étape et son tracé ?')){D.stages.splice(i,1);sel=D.stages[0]&&D.stages[0].id;changed()}
+ renderList();drawMap();
+});
+$('#badd').onclick=()=>{
+ const s={id:'s'+Date.now().toString(36),name:'Étape '+(D.stages.length+1),auto:true,date:'',notes:'',lodging:{name:'',address:'',price:'',booked:false},points:[]};
+ D.stages.push(s);sel=s.id;changed();renderList();drawMap();
+};
+
+/* ---------- Discussion ---------- */
+function renderChat(){
+ const box=$('#msgs');
+ box.innerHTML=D.messages.map(m=>`<div class="m ${m.author===C.me?'me':''}"><small>${esc(m.author)} · ${new Date(m.ts).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}</small>${esc(m.text).replace(/\n/g,'<br>')}</div>`).join('')||'<p class="meta">Pas encore de message.</p>';
+}
+async function send(){
+ const t=$('#mtxt').value.trim();if(!t)return;
+ D.messages.push({id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),author:C.me,text:t,ts:Date.now()});
+ $('#mtxt').value='';renderChat();changed();await save();
+}
+$('#msend').onclick=send;
+$('#mtxt').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
+async function refresh(manual){
+ if(!hasGh())return manual&&toast('Token GitHub requis pour actualiser.');
+ if(dirty&&!manual)return;
+ try{
+  const r=await ghGet();
+  if(r.sha===sha)return manual&&toast('Déjà à jour.');
+  if(dirty){mergeMsgs(r.data.messages||[]);sha=r.sha;toast('Messages récupérés, tes modifications restent à enregistrer.')}
+  else{D=r.data;sha=r.sha;D.stages=D.stages||[];D.messages=D.messages||[];if(!D.stages.find(s=>s.id===sel))sel=D.stages[0]&&D.stages[0].id;renderAll(false)}
+  renderChat();
+ }catch(e){manual&&toast('Actualisation impossible (erreur '+e.message+').')}
+}
+$('#bref').onclick=()=>refresh(true);
+setInterval(()=>refresh(false),60000);
+
+/* ---------- Réglages & onglets ---------- */
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+ $('#p-stages').hidden=b.dataset.t!=='stages';$('#p-chat').hidden=b.dataset.t!=='chat';
+});
+function openSet(){
+ $('#c-parts').value=D.participants.join(', ');
+ $('#c-me').innerHTML=D.participants.map(p=>`<option ${p===C.me?'selected':''}>${esc(p)}</option>`).join('');
+ ['owner','repo','branch','path','token'].forEach(k=>$('#c-'+k).value=C[k]||'');
+ $('#dlg').showModal();
+}
+$('#bset').onclick=openSet;
+$('#c-x').onclick=()=>$('#dlg').close();
+$('#c-parts').addEventListener('change',()=>{
+ const p=$('#c-parts').value.split(',').map(s=>s.trim()).filter(Boolean);
+ $('#c-me').innerHTML=p.map(x=>`<option>${esc(x)}</option>`).join('');
+});
+$('#c-ok').onclick=()=>{
+ const p=$('#c-parts').value.split(',').map(s=>s.trim()).filter(Boolean);
+ if(p.join()!==D.participants.join()){D.participants=p;changed()}
+ C.me=$('#c-me').value||p[0];
+ ['owner','repo','branch','path','token'].forEach(k=>C[k]=$('#c-'+k).value.trim());
+ localStorage.setItem('tp_cfg',JSON.stringify(C));
+ $('#dlg').close();renderChat();toast('Réglages enregistrés dans ce navigateur.');
+};
+$('#title').addEventListener('input',e=>{D.title=e.target.value;document.title=D.title;changed()});
+$('#bsave').onclick=save;
+addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+
+function renderAll(fit){$('#title').value=D.title;document.title=D.title;renderList();renderChat();drawMap(fit)}
+load().then(()=>{renderAll(true);setTimeout(()=>map.invalidateSize(),200);if(!hasGh())status('Lecture seule : token à régler (⚙)')});
+</script>
+</body>
+</html>
