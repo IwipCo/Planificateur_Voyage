@@ -39,6 +39,10 @@ main{display:grid;grid-template-rows:42vh 1fr;height:calc(100dvh - 52px)}
 .m{max-width:85%;padding:6px 10px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
 .m.me{align-self:flex-end;background:var(--me)}
 .m small{display:block;color:var(--mute);font-size:11px}
+.mid{box-sizing:border-box;width:16px;height:16px;border-radius:50%;background:var(--card);color:var(--ink);border:2px solid var(--sea);font:700 12px/11px system-ui;text-align:center;opacity:.9}
+#bar select{width:auto;flex:none}
+details{margin:6px 0}summary{cursor:pointer;color:var(--sea);font-weight:600}
+.sc{display:flex;flex-direction:column;gap:6px;margin:6px 0;max-height:240px;overflow:auto}
 .lodg{margin:6px 0}.lodg input{margin-bottom:4px}
 input[type=checkbox]{width:auto}.chk{display:flex;gap:6px;align-items:center;white-space:nowrap}
 #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;display:none;z-index:9999;max-width:90vw}
@@ -60,7 +64,9 @@ dialog p{font-size:13px;color:var(--mute)}
    <button id="vall">Tout le parcours</button>
    <button id="vday">Étape choisie</button>
    <button id="bdraw">✏ Tracer</button>
-   <button id="broute">🥾 Itinéraire à pied</button>
+   <button id="bgr">🟥 Afficher le GR34</button>
+   <select id="rmode" aria-label="Mode de tracé"><option value="foot">Tracer : chemins piétons</option><option value="gr">Tracer : suivre le GR34</option></select>
+   <button id="broute">🥾 Calculer l’itinéraire</button>
    <button id="bundo">↶ Retirer le dernier point</button>
   </div>
   <div id="map"></div>
@@ -85,6 +91,11 @@ dialog p{font-size:13px;color:var(--mute)}
  <label>Fichier de données</label><input id="c-path">
  <label>Token GitHub</label><input id="c-token" type="password" autocomplete="off">
  <p>Crée un token « fine-grained » limité à ce dépôt, avec la permission Contents : Read and write. Il reste uniquement dans ce navigateur. Chaque participant utilise le sien.</p>
+ <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+ <label>Partager la configuration avec…</label><select id="c-for"></select>
+ <div class="row"><button id="c-link">Générer et copier le lien</button></div>
+ <input id="c-url" readonly placeholder="Le lien apparaîtra ici">
+ <p>⚠ Ce lien contient ton token : quiconque l'ouvre peut modifier le dépôt. Envoie-le par un canal privé et révoque le token sur GitHub si le lien fuite.</p>
  <div class="row"><button id="c-ok" class="pri">Valider</button><button id="c-x">Fermer</button></div>
 </dialog>
 <div id="toast"></div>
@@ -96,6 +107,10 @@ const COL=['#e4572e','#2e86ab','#76b041','#a23b72','#d9a441','#17bebb','#7768ae'
 const DEF={title:'Mon voyage',participants:['Moi','Ami(e)'],stages:[],messages:[]};
 function guess(){const h=location.hostname,p=location.pathname.split('/')[1]||'';
  return h.endsWith('github.io')?{owner:h.split('.')[0],repo:(p&&!p.includes('.'))?p:h}:{}}
+(function(){const m=location.hash.match(/^#cfg=(.+)$/);if(!m)return;
+ try{const o=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,'+').replace(/_/g,'/')))));
+  localStorage.setItem('tp_cfg',JSON.stringify(o));window.__imp=1}catch(e){}
+ history.replaceState(null,'',location.pathname+location.search)})();
 const C=Object.assign({path:'data.json',branch:'main'},guess(),JSON.parse(localStorage.getItem('tp_cfg')||'{}'));
 let D=structuredClone(DEF),sha=null,sel=null,view='all',draw=false,dirty=false;
 
@@ -128,16 +143,16 @@ async function load(){
  if(!C.me)C.me=D.participants[0];
  sel=sel||(D.stages[0]&&D.stages[0].id);
 }
-function mergeMsgs(remote){
- const ids=new Set(D.messages.map(m=>m.id));
- remote.forEach(m=>{if(!ids.has(m.id))D.messages.push(m)});
- D.messages.sort((a,b)=>a.ts-b.ts);
+function mergeList(a,b){const ids=new Set(a.map(m=>m.id));b.forEach(m=>{if(!ids.has(m.id))a.push(m)});a.sort((x,y)=>x.ts-y.ts)}
+function mergeMsgs(rd){
+ mergeList(D.messages,rd.messages||[]);
+ (rd.stages||[]).forEach(rs=>{const s=D.stages.find(x=>x.id===rs.id);if(s&&rs.chat&&rs.chat.length){s.chat=s.chat||[];mergeList(s.chat,rs.chat)}});
 }
 async function save(){
  if(!hasGh()){openSet();return toast('Renseigne le token GitHub pour enregistrer.')}
  status('Enregistrement…');
  try{
-  try{const r=await ghGet();if(r.sha!==sha){mergeMsgs(r.data.messages||[]);sha=r.sha}}
+  try{const r=await ghGet();if(r.sha!==sha){mergeMsgs(r.data);sha=r.sha}}
   catch(e){if(e.message!=='404')throw e;sha=null}
   await ghPut();dirty=false;status('✓ Enregistré');renderChat();
  }catch(e){status('⚠ Échec');toast('Enregistrement impossible (erreur '+e.message+'). Vérifie le token et le dépôt.')}
@@ -172,6 +187,12 @@ function drawMap(fit){
     b.onclick=()=>{s.points.splice(j,1);map.closePopup();changed();drawMap();renderList()};
     m.bindPopup(b);
    });
+   if(draw)for(let j=0;j<s.points.length-1;j++){
+    const a=s.points[j],c=s.points[j+1],mid=L.latLng((a[0]+c[0])/2,(a[1]+c[1])/2);
+    const ins=ll=>{s.points.splice(j+1,0,[+ll.lat.toFixed(5),+ll.lng.toFixed(5)]);changed();drawMap();renderList()};
+    const h=L.marker(mid,{draggable:true,icon:L.divIcon({className:'',iconSize:[16,16],html:'<div class="mid">+</div>'})}).addTo(layer);
+    h.on('click',()=>ins(mid));h.on('dragend',e=>ins(e.target.getLatLng()));
+   }
   }
  });
  if(fit&&all.length)map.fitBounds(all,{padding:[30,30]});
@@ -189,37 +210,98 @@ map.on('click',e=>{
 });
 $('#vall').onclick=()=>{view='all';drawMap(true)};
 $('#vday').onclick=()=>{view='day';drawMap(true)};
-$('#bdraw').onclick=()=>{draw=!draw;if(draw)view='day';drawMap();if(draw)toast('Touche la carte pour ajouter des points de passage.')};
+$('#bdraw').onclick=()=>{draw=!draw;if(draw)view='day';drawMap();if(draw)toast('Touche la carte pour ajouter des points, ou un « + » entre deux points pour en insérer un.')};
 /* Itinéraire à pied : routage OSM (FOSSGIS), par blocs de 20 repères */
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function routeStage(s){
  if(!s||s.points.length<2)return toast('Place au moins 2 repères sur la carte (✏ Tracer).');
- toast('Calcul de l’itinéraire à pied…');
+ const mode=$('#rmode').value;
+ toast(mode==='gr'?'Calcul le long du GR34…':'Calcul de l’itinéraire à pied…');
  try{
-  const out=[];let km=0;
-  for(let i=0;i<s.points.length-1;i+=19){
+  let out=[],km=0,gaps=0;
+  if(mode==='gr'){const r=await routeGR(s);out=r.out;km=r.km;gaps=r.gaps}
+  else for(let i=0;i<s.points.length-1;i+=19){
    const co=s.points.slice(i,i+20).map(p=>p[1]+','+p[0]).join(';');
    const r=await fetch('https://routing.openstreetmap.de/routed-foot/route/v1/driving/'+co+'?overview=full&geometries=geojson');
    const j=await r.json();if(j.code!=='Ok')throw 0;
    km+=j.routes[0].distance/1000;
    j.routes[0].geometry.coordinates.forEach(([lo,la])=>{const q=[+la.toFixed(5),+lo.toFixed(5)];if(!out.length||map.distance(out[out.length-1],q)>12)out.push(q)});
   }
-  s.route=out;s.routeKm=km;s.routeKey=key(s);changed();renderList();drawMap();
-  toast('Itinéraire calculé : '+km.toFixed(1)+' km');
- }catch(e){toast('Calcul impossible : service indisponible ou aucun chemin entre ces repères.')}
+  s.route=out;s.routeKm=km;s.routeKey=key(s);s.routeMode=mode;changed();renderList();drawMap();
+  toast('Itinéraire calculé : '+km.toFixed(1)+' km'+(gaps?' (GR34 interrompu à '+gaps+' endroit(s) : segments droits)':''));
+ }catch(e){toast(e.custom?e.message:'Calcul impossible : service indisponible ou aucun chemin entre ces repères.')}
 }
 $('#broute').onclick=()=>routeStage(cur());
+/* GR34 : tracé OpenStreetMap (Overpass), affichage et guidage */
+map.createPane('gr').style.zIndex=350;
+const grLayer=L.layerGroup().addTo(map);
+let grC=null,grOn=localStorage.getItem('tp_gr')==='1',gt;
+async function overpass(q){
+ for(const u of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']){
+  try{const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q)});if(r.ok)return await r.json()}catch(e){}
+ }
+ throw new Error('overpass');
+}
+async function gr34(bb){ /* bb = [sud, ouest, nord, est] */
+ if(grC&&bb[0]>=grC.bb[0]&&bb[1]>=grC.bb[1]&&bb[2]<=grC.bb[2]&&bb[3]<=grC.bb[3])return grC.ways;
+ const p=.05,b=[bb[0]-p,bb[1]-p,bb[2]+p,bb[3]+p].map(x=>+x.toFixed(4)).join(',');
+ const j=await overpass('[out:json][timeout:25];relation["route"="hiking"]["ref"~"(^|;) ?GR ?34($|;)"]('+b+')->.r;way(r.r)('+b+');out geom;');
+ const ways=j.elements.filter(e=>e.geometry).map(e=>e.geometry.map(g=>[g.lat,g.lon]));
+ grC={bb:[bb[0]-p,bb[1]-p,bb[2]+p,bb[3]+p],ways};return ways;
+}
+async function drawGR(){
+ grLayer.clearLayers();if(!grOn)return;
+ if(map.getZoom()<9)return toast('Zoome un peu pour afficher le GR34.');
+ const b=map.getBounds().pad(.15);
+ try{
+  const ways=await gr34([b.getSouth(),b.getWest(),b.getNorth(),b.getEast()]);
+  if(!grOn)return;grLayer.clearLayers();
+  ways.forEach(w=>L.polyline(w,{pane:'gr',color:'#c1121f',weight:6,opacity:.5,interactive:false}).addTo(grLayer));
+  if(!ways.length)toast('Aucun GR34 dans cette zone.');
+ }catch(e){toast('GR34 indisponible pour le moment (service OpenStreetMap).')}
+}
+function setGR(v){grOn=v;localStorage.setItem('tp_gr',v?'1':'0');const b=$('#bgr');b.classList.toggle('on',v);b.textContent=v?'🟥 GR34 affiché':'🟥 Afficher le GR34';drawGR()}
+$('#bgr').onclick=()=>setGR(!grOn);
+map.on('moveend',()=>{if(grOn){clearTimeout(gt);gt=setTimeout(drawGR,600)}});
+function dijkstra(adj,src,dst){
+ const d=new Float64Array(adj.length).fill(Infinity),prev=new Int32Array(adj.length).fill(-1),h=[[0,src]];d[src]=0;
+ const push=x=>{h.push(x);let i=h.length-1;while(i>0){const q=(i-1)>>1;if(h[q][0]<=h[i][0])break;[h[q],h[i]]=[h[i],h[q]];i=q}};
+ const pop=()=>{const t=h[0],l=h.pop();if(h.length){h[0]=l;let i=0;for(;;){const a=2*i+1,b=a+1;let m=i;if(a<h.length&&h[a][0]<h[m][0])m=a;if(b<h.length&&h[b][0]<h[m][0])m=b;if(m===i)break;[h[m],h[i]]=[h[i],h[m]];i=m}}return t};
+ while(h.length){const [du,u]=pop();if(du>d[u])continue;if(u===dst)break;for(const [v,w] of adj[u]){const nd=du+w;if(nd<d[v]){d[v]=nd;prev[v]=u;push([nd,v])}}}
+ if(d[dst]===Infinity)return null;
+ const path=[];for(let u=dst;u!==-1;u=prev[u])path.push(u);return path.reverse();
+}
+async function routeGR(s){
+ const bad=m=>Object.assign(new Error(m),{custom:1}),pad=.06;
+ const la=s.points.map(p=>p[0]),lo=s.points.map(p=>p[1]);
+ const ways=await gr34([Math.min(...la)-pad,Math.min(...lo)-pad,Math.max(...la)+pad,Math.max(...lo)+pad]);
+ if(!ways.length)throw bad('Aucun tracé du GR34 trouvé près de ces repères.');
+ const idx=new Map(),xy=[],adj=[];
+ const node=p=>{const k=p[0]+','+p[1];let i=idx.get(k);if(i===undefined){i=xy.length;idx.set(k,i);xy.push(p);adj.push([])}return i};
+ ways.forEach(w=>{for(let i=1;i<w.length;i++){const a=node(w[i-1]),b=node(w[i]),d=map.distance(w[i-1],w[i]);adj[a].push([b,d]);adj[b].push([a,d])}});
+ const snap=s.points.map((p,j)=>{let best=0,bd=Infinity;xy.forEach((q,i)=>{const d=map.distance(p,q);if(d<bd){bd=d;best=i}});
+  if(bd>1500)throw bad('Le repère '+(j+1)+' est à '+Math.round(bd)+' m du GR34 : rapproche-le du sentier.');return best});
+ const out=[];let km=0,gaps=0;
+ const add=q=>{if(!out.length||map.distance(out[out.length-1],q)>12)out.push([+q[0].toFixed(5),+q[1].toFixed(5)])};
+ for(let j=0;j<snap.length-1;j++){
+  const path=dijkstra(adj,snap[j],snap[j+1]);
+  if(!path){gaps++;add(xy[snap[j]]);add(xy[snap[j+1]]);km+=map.distance(xy[snap[j]],xy[snap[j+1]])/1000;continue}
+  path.forEach(i=>add(xy[i]));
+  for(let k=1;k<path.length;k++)km+=map.distance(xy[path[k-1]],xy[path[k]])/1000;
+ }
+ return{out,km,gaps};
+}
 /* Nom d’étape automatique : « ville de départ - ville d’arrivée » (Nominatim) */
 let nt;function scheduleNames(){clearTimeout(nt);nt=setTimeout(autoNames,1500)}
 async function place(p){
- const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=12&accept-language=fr&lat='+p[0]+'&lon='+p[1]);
+ const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&accept-language=fr&lat='+p[0]+'&lon='+p[1]);
  const a=(await r.json()).address||{};
- return a.city||a.town||a.village||a.municipality||a.hamlet||null;
+ return a.hamlet||a.isolated_dwelling||a.locality||a.neighbourhood||a.quarter||a.suburb||a.village||a.town||a.city||a.municipality||null;
 }
 async function autoNames(){
  for(const s of D.stages){
   if(!s.auto||s.points.length<2)continue;
-  const A=s.points[0],B=s.points[s.points.length-1],k=A+'|'+B;
+  const A=s.points[0],B=s.points[s.points.length-1],k='v2|'+A+'|'+B;
   if(s.geoKey===k)continue;
   try{
    const a=await place(A);await sleep(1100);const b=await place(B);
@@ -232,18 +314,30 @@ async function autoNames(){
 $('#bundo').onclick=()=>{const s=cur();if(s&&s.points.length){s.points.pop();changed();drawMap();renderList()}};
 
 /* ---------- Étapes ---------- */
+const openC=new Set();
+const msgHtml=m=>`<div class="m ${m.author===C.me?'me':''}"><small>${esc(m.author)} · ${new Date(m.ts).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}</small>${esc(m.text).replace(/\n/g,'<br>')}</div>`;
+const chatHtml=s=>(s.chat||[]).map(msgHtml).join('')||'<p class="meta">Pas encore de message.</p>';
+function renderStageChats(){
+ document.querySelectorAll('.sc').forEach(el=>{
+  const s=D.stages.find(x=>x.id===el.dataset.id);if(!s)return;
+  el.innerHTML=chatHtml(s);el.scrollTop=el.scrollHeight;
+  el.closest('details').querySelector('summary').textContent='💬 Discussion ('+(s.chat||[]).length+')';
+ });
+}
 function fmtD(d){return d?new Date(d+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):''}
 function renderList(){
  renderSum();
  $('#list').innerHTML=D.stages.map((s,i)=>`<div class="card ${s.id===sel?'on':''}" data-id="${s.id}">
   <div class="row"><span class="dot" style="background:${COL[i%COL.length]}"></span><input data-f="name" value="${esc(s.name)}"><input type="date" data-f="date" value="${esc(s.date)}"></div>
-  <div class="meta">${dist(s).toFixed(1)} km · ${s.points.length} repère(s) · ${okRoute(s)?'itinéraire à pied':s.route?'itinéraire à recalculer':'ligne droite'}</div>
+  <div class="meta">${dist(s).toFixed(1)} km · ${s.points.length} repère(s) · ${okRoute(s)?(s.routeMode==='gr'?'suit le GR34':'itinéraire à pied'):s.route?'itinéraire à recalculer':'ligne droite'}</div>
   <div class="lodg"><div class="meta">Hébergement</div>
   <input data-l="name" placeholder="Nom" value="${esc((s.lodging||{}).name)}">
   <input data-l="address" placeholder="Adresse" value="${esc((s.lodging||{}).address)}">
   <div class="row"><input data-l="price" type="number" min="0" step="1" placeholder="Prix total (€)" value="${esc((s.lodging||{}).price)}"><label class="chk"><input type="checkbox" data-l="booked" ${(s.lodging||{}).booked?'checked':''}> Réservé</label></div></div>
   <textarea data-f="notes" rows="2" placeholder="Notes : ravitaillement, marées, météo…">${esc(s.notes)}</textarea>
-  <div class="row" style="flex-wrap:wrap"><button data-a="view">Voir</button><button data-a="route">🥾 Itinéraire à pied</button><button data-a="auto">Nom auto</button><button data-a="up" aria-label="Monter">↑</button><button data-a="down" aria-label="Descendre">↓</button><button data-a="del" class="danger">Supprimer</button></div>
+  <details data-id="${s.id}" ${openC.has(s.id)?'open':''}><summary>💬 Discussion (${(s.chat||[]).length})</summary><div class="sc" data-id="${s.id}">${chatHtml(s)}</div>
+   <div class="row"><input class="cin" placeholder="Message sur cette étape…"><button class="pri" data-a="csend">Envoyer</button></div></details>
+  <div class="row" style="flex-wrap:wrap"><button data-a="view">Voir</button><button data-a="route">🥾 Calculer l’itinéraire</button><button data-a="auto">Nom auto</button><button data-a="up" aria-label="Monter">↑</button><button data-a="down" aria-label="Descendre">↓</button><button data-a="del" class="danger">Supprimer</button></div>
  </div>`).join('')||'<p class="meta">Aucune étape. Ajoutes-en une pour commencer.</p>';
 }
 $('#list').addEventListener('input',e=>{
@@ -265,6 +359,7 @@ $('#list').addEventListener('click',e=>{
  if(!a){sel=id;document.querySelectorAll('.card').forEach(x=>x.classList.toggle('on',x.dataset.id===id));if(view==='day')drawMap(true);return}
  sel=id;
  if(a==='view'){view='day';drawMap(true)}
+ if(a==='csend'){stageSend(D.stages[i],c);return}
  if(a==='route'){routeStage(D.stages[i]);return}
  if(a==='auto'){D.stages[i].auto=true;D.stages[i].geoKey=null;scheduleNames();toast('Nom calculé à partir des repères…');return}
  if(a==='up'&&i>0){[D.stages[i-1],D.stages[i]]=[D.stages[i],D.stages[i-1]];changed()}
@@ -277,8 +372,23 @@ $('#badd').onclick=()=>{
  D.stages.push(s);sel=s.id;changed();renderList();drawMap();
 };
 
+async function stageSend(s,c){
+ const inp=c.querySelector('.cin'),t=inp.value.trim();if(!t)return;
+ (s.chat=s.chat||[]).push({id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),author:C.me,text:t,ts:Date.now()});
+ inp.value='';changed();renderStageChats();await save();
+}
+$('#list').addEventListener('keydown',e=>{
+ if(e.key!=='Enter'||!e.target.classList.contains('cin'))return;
+ const c=e.target.closest('.card');stageSend(D.stages.find(x=>x.id===c.dataset.id),c);
+});
+$('#list').addEventListener('toggle',e=>{
+ const d=e.target;if(d.tagName!=='DETAILS')return;
+ d.open?openC.add(d.dataset.id):openC.delete(d.dataset.id);
+ if(d.open){const sc=d.querySelector('.sc');sc.scrollTop=sc.scrollHeight}
+},true);
 /* ---------- Discussion ---------- */
 function renderChat(){
+ renderStageChats();
  const box=$('#msgs');
  box.innerHTML=D.messages.map(m=>`<div class="m ${m.author===C.me?'me':''}"><small>${esc(m.author)} · ${new Date(m.ts).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}</small>${esc(m.text).replace(/\n/g,'<br>')}</div>`).join('')||'<p class="meta">Pas encore de message.</p>';
 }
@@ -295,7 +405,7 @@ async function refresh(manual){
  try{
   const r=await ghGet();
   if(r.sha===sha)return manual&&toast('Déjà à jour.');
-  if(dirty){mergeMsgs(r.data.messages||[]);sha=r.sha;toast('Messages récupérés, tes modifications restent à enregistrer.')}
+  if(dirty){mergeMsgs(r.data);sha=r.sha;toast('Messages récupérés, tes modifications restent à enregistrer.')}
   else{D=r.data;sha=r.sha;D.stages=D.stages||[];D.messages=D.messages||[];if(!D.stages.find(s=>s.id===sel))sel=D.stages[0]&&D.stages[0].id;renderAll(false)}
   renderChat();
  }catch(e){manual&&toast('Actualisation impossible (erreur '+e.message+').')}
@@ -309,12 +419,24 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
  $('#p-stages').hidden=b.dataset.t!=='stages';$('#p-chat').hidden=b.dataset.t!=='chat';
 });
 function openSet(){
+ $('#c-for').innerHTML=(D.participants.filter(p=>p!==C.me).length?D.participants.filter(p=>p!==C.me):D.participants).map(p=>`<option>${esc(p)}</option>`).join('');
+ $('#c-url').value='';
  $('#c-parts').value=D.participants.join(', ');
  $('#c-me').innerHTML=D.participants.map(p=>`<option ${p===C.me?'selected':''}>${esc(p)}</option>`).join('');
  ['owner','repo','branch','path','token'].forEach(k=>$('#c-'+k).value=C[k]||'');
  $('#dlg').showModal();
 }
 $('#bset').onclick=openSet;
+$('#c-link').onclick=async()=>{
+ const o={owner:$('#c-owner').value.trim(),repo:$('#c-repo').value.trim(),branch:$('#c-branch').value.trim()||'main',path:$('#c-path').value.trim()||'data.json',token:$('#c-token').value.trim(),me:$('#c-for').value};
+ if(!o.owner||!o.repo||!o.token)return toast('Renseigne d’abord le dépôt et le token ci-dessus.');
+ const b=btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+ const u=location.origin+location.pathname+'#cfg='+b;
+ $('#c-url').value=u;
+ try{await navigator.clipboard.writeText(u);toast('Lien copié. Envoie-le par un canal privé.')}
+ catch(e){$('#c-url').select();toast('Lien généré : copie-le depuis le champ.')}
+};
+$('#c-url').onclick=e=>e.target.select();
 $('#c-x').onclick=()=>$('#dlg').close();
 $('#c-parts').addEventListener('change',()=>{
  const p=$('#c-parts').value.split(',').map(s=>s.trim()).filter(Boolean);
@@ -333,7 +455,7 @@ $('#bsave').onclick=save;
 addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 
 function renderAll(fit){$('#title').value=D.title;document.title=D.title;renderList();renderChat();drawMap(fit)}
-load().then(()=>{renderAll(true);setTimeout(()=>map.invalidateSize(),200);if(!hasGh())status('Lecture seule : token à régler (⚙)')});
+load().then(()=>{renderAll(true);if(window.__imp)toast('Configuration importée. Tu es '+C.me+'.');setTimeout(()=>{map.invalidateSize();setGR(grOn)},200);if(!hasGh())status('Lecture seule : token à régler (⚙)')});
 </script>
 </body>
 </html>
