@@ -59,7 +59,8 @@ table.rc{width:100%;border-collapse:collapse;font-size:14px}.rc th,.rc td{paddin
 .rc tr[data-id]{cursor:pointer}.rc tr.miss td{background:rgba(217,164,65,.2)}
 #bback{flex:none}
 #cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;padding:12px}
-.tc{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column}
+.tc{position:relative;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column}
+.x{position:absolute;top:6px;right:6px;width:26px;height:26px;padding:0;line-height:1;border-radius:50%}
 .tc .band{height:10px}.tc .tb{padding:10px 12px;display:flex;flex-direction:column;gap:4px}.tc b{font:600 16px Georgia,serif}
 .tc.new{border-style:dashed;justify-content:center;min-height:110px;color:var(--sea);align-items:center;text-align:center}
 .lodg{margin:6px 0}.lodg input{margin-bottom:4px}
@@ -159,10 +160,18 @@ const api=p=>`https://api.github.com/repos/${C.owner}/${C.repo}/contents/${p}`;
 const hdr=()=>({Authorization:'Bearer '+C.token,Accept:'application/vnd.github+json'});
 const hasGh=()=>C.token&&C.owner&&C.repo;
 async function ghGet(p){
+ const u=api(p)+'?ref='+C.branch+'&t='+Date.now();
+ const r=await fetch(u,{headers:hdr(),cache:'no-store'});
+ if(!r.ok)throw new Error(r.status);
+ const j=await r.json();let txt;
+ if(j.content&&j.encoding!=='none')txt=decodeURIComponent(escape(atob(j.content.replace(/\n/g,''))));
+ else{const r2=await fetch(u,{headers:{...hdr(),Accept:'application/vnd.github.raw+json'},cache:'no-store'});if(!r2.ok)throw new Error(r2.status);txt=await r2.text()}
+ return{sha:j.sha,data:JSON.parse(txt)};
+}
+async function ghSha(p){
  const r=await fetch(api(p)+'?ref='+C.branch+'&t='+Date.now(),{headers:hdr(),cache:'no-store'});
  if(!r.ok)throw new Error(r.status);
- const j=await r.json();
- return{sha:j.sha,data:JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))))};
+ return (await r.json()).sha;
 }
 async function ghPut(p,obj,sh,msg){
  const body={message:msg,branch:C.branch,content:btoa(unescape(encodeURIComponent(JSON.stringify(obj))))};
@@ -213,7 +222,7 @@ async function saveIndex(){
  let remote=null,rs=null;
  try{const r=await ghGet(idxPath());remote=r.data;rs=r.sha}catch(e){if(e.message!=='404')throw e}
  const mine=IDX.trips.find(t=>t.id===curId);
- const rt=(remote?(remote.trips||[]):IDX.trips).filter(t=>!deleted.has(t.id));
+ const rt=(remote?(remote.trips||[]):IDX.trips.filter(t=>t.id===curId||t.file)).filter(t=>!deleted.has(t.id));
  if(remote&&mine){const i=rt.findIndex(t=>t.id===mine.id);if(i>=0)rt[i]=mine;else rt.push(mine)}
  IDX={trips:rt};
  idxSha=await ghPut(idxPath(),IDX,rs,'Index des voyages');idxDirty=false;
@@ -246,7 +255,7 @@ const layer=L.layerGroup().addTo(map);
 const cur=()=>D.stages.find(s=>s.id===sel);
 const key=s=>s.points.map(p=>p.join(',')).join(';');
 const okRoute=s=>s.route&&s.routeKey===key(s);
-function dist(s){if(okRoute(s))return s.routeKm;let d=0;for(let i=1;i<s.points.length;i++)d+=map.distance(s.points[i-1],s.points[i]);return d/1000}
+function dist(s){if(okRoute(s)&&s.routeKm!=null)return s.routeKm;let d=0;for(let i=1;i<s.points.length;i++)d+=map.distance(s.points[i-1],s.points[i]);return d/1000}
 function midOf(l){
  if(l.length<2)return l[0];
  let t=0;const c=[0];for(let i=1;i<l.length;i++){t+=map.distance(l[i-1],l[i]);c.push(t)}
@@ -317,7 +326,7 @@ async function routeStage(s,quiet){
    const r=await fetch('https://routing.openstreetmap.de/routed-foot/route/v1/driving/'+co+'?overview=full&geometries=geojson');
    const j=await r.json();if(j.code!=='Ok')throw 0;
    km+=j.routes[0].distance/1000;
-   j.routes[0].geometry.coordinates.forEach(([lo,la])=>{const q=[+la.toFixed(5),+lo.toFixed(5)];if(!out.length||map.distance(out[out.length-1],q)>12)out.push(q)});
+   j.routes[0].geometry.coordinates.forEach(([lo,la])=>{const q=[+la.toFixed(5),+lo.toFixed(5)];if(!out.length||map.distance(out[out.length-1],q)>20)out.push(q)});
   }
   if(rtTok.get(s.id)!==my)return;
   s.route=out;s.routeKm=km;s.routeKey=k0;changed();renderList();drawMap();
@@ -395,7 +404,7 @@ function profSvg(s){
  const pts=e.d.map((d,i)=>x(d).toFixed(1)+','+y(e.z[i]).toFixed(1)).join(' ');
  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Profil altimétrique"><polygon points="${P},${H-P} ${pts} ${W-P},${H-P}" fill="var(--sea)" opacity=".25"/><polyline points="${pts}" fill="none" stroke="var(--sea)" stroke-width="1.5"/></svg><div class="meta" style="display:flex;justify-content:space-between"><span>min ${e.min} m</span><span>${dm.toFixed(1)} km</span><span>max ${e.max} m</span></div>`;
 }
-const elevHtml=s=>s.elev?`<div class="meta">↗ ${s.elev.up} m · ↘ ${s.elev.dn} m${s.elevKey!==elevKey(s)?' · à recalculer':''}</div>`+profSvg(s):'<div class="meta">Dénivelé : non calculé</div>';
+const elevHtml=s=>{try{return s.elev?`<div class="meta">↗ ${s.elev.up} m · ↘ ${s.elev.dn} m${s.elevKey!==elevKey(s)?' · à recalculer':''}</div>`+profSvg(s):'<div class="meta">Dénivelé : non calculé</div>'}catch(e){return''}};
 /* ---- Météo & marées (Open-Meteo) ---- */
 const WX={};
 const wxk=s=>s.date+'|'+(s.points[0]||[]).join(',');
@@ -703,12 +712,13 @@ function tripStatus(m){const t=iso(new Date());if(!m.start||!m.end)return['Dates
 function renderHome(){
  $('#hmsg').innerHTML=hasGh()?'':'<p class="meta" style="padding:0 14px">Lecture seule : renseigne le token (⚙) pour créer et modifier des voyages.</p>';
  const ts=[...IDX.trips].sort((a,b)=>(b.start||'9999').localeCompare(a.start||'9999'));
- $('#cards').innerHTML=ts.map(m=>{const [lb,cl]=tripStatus(m);return `<div class="tc" data-id="${esc(m.id)}"><div class="band" style="background:hsl(${hue(m.id)} 55% 45%)"></div><div class="tb"><b>${esc(m.name||'Sans nom')}</b>
+ $('#cards').innerHTML=ts.map(m=>{const [lb,cl]=tripStatus(m);return `<div class="tc" data-id="${esc(m.id)}"><button class="x" data-del="${esc(m.id)}" aria-label="Supprimer ce voyage" title="Supprimer ce voyage">✕</button><div class="band" style="background:hsl(${hue(m.id)} 55% 45%)"></div><div class="tb"><b>${esc(m.name||'Sans nom')}</b>
   <div class="meta">${m.start?fmtY(m.start)+(m.end?' → '+fmtY(m.end):''):'Dates à définir'}</div>
   <div class="meta">${m.days||0} jour(s)${m.km?' · '+m.km+' km':''}</div>
-  <div class="meta">👥 ${esc((m.participants||[]).join(', '))}</div><div><span class="chip ${cl}">${lb}</span></div></div></div>`}).join('')+'<div class="tc new" id="tnew"><div class="tb"><b>＋ Nouveau voyage</b></div></div>';
+  <div class="meta">👥 ${esc((m.participants||[]).join(', '))}</div><div><span class="chip ${cl}">${lb}</span></div>${bad[m.id]?`<div><span class="chip warn">⚠ ${esc(bad[m.id])}</span></div>`:''}</div></div>`}).join('')+'<div class="tc new" id="tnew"><div class="tb"><b>＋ Nouveau voyage</b></div></div>';
 }
 $('#cards').addEventListener('click',e=>{
+ const dx=e.target.closest('[data-del]');if(dx){e.stopPropagation();return delTripById(dx.dataset.del)}
  if(e.target.closest('#tnew'))return newTrip();
  const c=e.target.closest('.tc[data-id]');if(c)location.hash='#t='+c.dataset.id;
 });
@@ -725,15 +735,22 @@ function showHome(){
  curId=null;D=structuredClone(DEF);dirty=false;
  $('#trip').hidden=true;$('#home').hidden=false;document.title='Mes voyages';renderHome();
 }
+const bad={},em=e=>e instanceof SyntaxError?'fichier illisible':(e&&e.message==='404'?'introuvable':(e&&e.message?e.message:String(e)));
 async function openTrip(id){
- if(!IDX.trips.find(t=>t.id===id)){toast('Voyage introuvable.');location.hash='';return}
+ const m=IDX.trips.find(t=>t.id===id);
+ if(!m){toast('Voyage introuvable.');location.hash='';return}
  curId=id;sha=null;dirty=false;let fresh=false;
  if(newData[id]){D=newData[id];delete newData[id];fresh=true}
  else{
-  try{if(!hasGh())throw 0;const r=await ghGet(tpath());D=r.data;sha=r.sha}
-  catch(e){try{const r=await fetch(tpath()+'?t='+Date.now());if(!r.ok)throw 0;D=await r.json()}catch(e2){toast('Impossible de charger ce voyage.');curId=null;location.hash='';return}}
+  let ok=false,err='';
+  if(hasGh()){try{const r=await ghGet(tpath());D=r.data;sha=r.sha;ok=true}catch(e){err='GitHub '+em(e)}}
+  if(!ok){try{const r=await fetch(tpath()+'?t='+Date.now());if(!r.ok)throw new Error(r.status);D=await r.json();ok=true}catch(e){err+=(err?' · ':'')+'Pages '+em(e)}}
+  if(!ok){bad[id]=err;toast('Impossible d’ouvrir « '+(m.name||id)+' » ('+err+'). Tu peux le retirer avec ✕.');curId=null;location.hash='';return}
  }
- norm();openS.clear();openC.clear();sel=D.stages[0]&&D.stages[0].id;view='all';draw=false;
+ delete bad[id];
+ if(!D||typeof D!=='object')D=structuredClone(DEF);
+ try{norm()}catch(e){toast('Données abîmées : '+em(e))}
+ openS.clear();openC.clear();sel=D.stages[0]&&D.stages[0].id;view='all';draw=false;
  $('#home').hidden=true;$('#trip').hidden=false;map.invalidateSize();renderAll(true);
  status(hasGh()?'':'Lecture seule : token à régler (⚙)');
  if(fresh){dirty=true;await save()}
@@ -754,17 +771,20 @@ async function refreshIdx(manual){
  try{const r=await ghGet(idxPath());if(r.sha!==idxSha&&!idxDirty){IDX=r.data;IDX.trips=IDX.trips||[];idxSha=r.sha;renderHome()}else if(manual)toast('Déjà à jour.')}catch(e){manual&&toast('Actualisation impossible.')}
 }
 $('#bhref').onclick=()=>refreshIdx(true);
-async function delTrip(){
- if(!curId||!confirm('Supprimer définitivement ce voyage pour tous les participants ?'))return;
- if(!hasGh())return toast('Token GitHub requis.');
- const id=curId,p=tpath();
+async function delTripById(id){
+ const m=IDX.trips.find(t=>t.id===id);if(!m)return;
+ if(!hasGh())return toast('Token GitHub requis pour supprimer.');
+ if(!confirm('Supprimer « '+(m.name||'ce voyage')+' » pour tous les participants ? Son fichier sera supprimé du dépôt.'))return;
+ const p=m.file||C.dir+'/'+id+'.json';
  try{
-  try{const r=await ghGet(p);await ghDel(p,r.sha)}catch(e){if(e.message!=='404')throw e}
-  deleted.add(id);IDX.trips=IDX.trips.filter(t=>t.id!==id);curId=null;dirty=false;
-  await saveIndex();location.hash='';
- }catch(e){toast('Suppression impossible (erreur '+e.message+').')}
+  try{await ghDel(p,await ghSha(p))}catch(e){if(e.message!=='404')throw e}
+  deleted.add(id);IDX.trips=IDX.trips.filter(t=>t.id!==id);delete bad[id];
+  if(curId===id){curId=null;dirty=false}
+  await saveIndex();
+  if(location.hash)location.hash='';else renderHome();
+ }catch(e){toast('Suppression impossible (erreur '+em(e)+').')}
 }
-$('#t-del').onclick=delTrip;
+$('#t-del').onclick=()=>delTripById(curId);
 /* ---------- Réglages & onglets ---------- */
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
@@ -819,7 +839,10 @@ $('#title').onclick=()=>document.querySelector('.tabs [data-t=trip]').click();
 $('#bsave').onclick=save;
 addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 
-function renderAll(fit){$('#title').value=D.title;document.title=D.title;renderList();renderChat();renderTrip();renderTrans();drawMap(fit);drawTrans();geoTrans()}
+function renderAll(fit){
+ const run=f=>{try{f()}catch(e){console.error(e);toast('Erreur d’affichage : '+em(e))}};
+ run(()=>{$('#title').value=D.title;document.title=D.title});run(renderList);run(renderChat);run(renderTrip);run(renderTrans);run(()=>drawMap(fit));run(drawTrans);run(()=>geoTrans());
+}
 (async()=>{
  setGR(grOn);
  try{await loadIndex()}catch(e){toast('Chargement impossible : '+e.message)}
