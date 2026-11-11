@@ -39,6 +39,8 @@ main{display:grid;grid-template-rows:42vh 1fr;height:calc(100dvh - 52px)}
 #editbar{display:flex;flex-wrap:wrap;gap:4px;flex-basis:100%}#editbar[hidden]{display:none}
 .ck{display:flex;gap:6px;align-items:center;margin:4px 0}.ck [data-ck=text]{flex:1;min-width:0}.ck select{width:auto;max-width:42%}
 .x.ed{right:38px}
+.wp.fl{border-radius:4px}
+#editbar select{width:auto;flex:none;padding:3px 6px;font-size:13px}
 .tmk{width:24px;height:24px;border-radius:50%;background:var(--card);border:2px solid;font:14px/20px system-ui;text-align:center}
 .sec{font:600 15px Georgia,serif;margin:14px 0 6px;display:flex;justify-content:space-between;align-items:center}
 .card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:6px;padding:8px;margin-bottom:8px}
@@ -111,6 +113,8 @@ dialog p{font-size:13px;color:var(--mute)}
    <button id="bgr" title="Afficher ou masquer les GR">🟥 GR</button>
    <button id="btr" title="Afficher ou masquer les trajets aller / retour">🚆 Trajets</button>
    <div id="editbar" hidden>
+    <select id="rmode" title="Mode de calcul de l’itinéraire"><option value="foot">🥾 Piéton</option><option value="car">🚗 Voiture</option></select>
+    <button id="bdirect" title="Les prochains points seront reliés en ligne droite, hors chemins">↯ Ligne droite : non</button>
     <button id="bauto" title="Calcul automatique de l’itinéraire et du dénivélé">⚡ Auto : oui</button>
     <button id="broute" title="Calculer l’itinéraire à pied du jour choisi">🥾 Calculer l’itinéraire</button>
     <button id="bundo" title="Retirer le dernier point posé">✕ Annuler le dernier point</button>
@@ -286,7 +290,7 @@ L.control.layers(BASES,null,{position:'topright'}).addTo(map);
 map.on('baselayerchange',e=>localStorage.setItem('tp_base',e.name));
 const layer=L.layerGroup().addTo(map);
 const cur=()=>D.stages.find(s=>s.id===sel);
-const key=s=>s.points.map(p=>p.join(',')).join(';');
+const key=s=>s.points.map(p=>p.join(',')).join(';')+(s.rmode==='car'?'|car':'');
 const okRoute=s=>s.route&&s.routeKey===key(s);
 function dist(s){if(okRoute(s)&&s.routeKm!=null)return s.routeKm;let d=0;for(let i=1;i<s.points.length;i++)d+=map.distance(s.points[i-1],s.points[i]);return d/1000}
 function midOf(l){
@@ -304,19 +308,23 @@ function drawMap(fit){
   all.push(...s.points);
   if(okRoute(s))L.polyline(s.route,{color:col,weight:s.id===sel&&view==='all'?8:5,opacity:.9}).addTo(layer);
   else if(s.points.length>1)L.polyline(s.points,{color:col,weight:4,opacity:.8,dashArray:'6 8'}).addTo(layer);
+  s.points.forEach((p,j)=>{if(j&&p[2])L.polyline([s.points[j-1],p],{color:'#fff',weight:3,opacity:.95,dashArray:'3 7'}).addTo(layer)});
   if(view==='all'){
    L.marker(midOf(okRoute(s)?s.route:s.points),{icon:L.divIcon({className:'',iconSize:[28,28],html:`<div class="dayb" style="background:${col}">J${i+1}</div>`})}).on('click',()=>goStage(s.id)).addTo(layer);
   }else{
    s.points.forEach((p,j)=>{
-    const m=L.marker(p,{draggable:true,icon:L.divIcon({className:'',iconSize:[22,22],html:`<div class="wp" style="background:${col}">${j+1}</div>`})}).addTo(layer);
-    m.on('dragend',e=>{const l=e.target.getLatLng();s.points[j]=[l.lat,l.lng];changed();autoRoute(s);drawMap();renderList()});
+    const m=L.marker(p,{draggable:true,icon:L.divIcon({className:'',iconSize:[22,22],html:`<div class="wp${p[2]?' fl':''}" style="background:${col}">${j+1}</div>`})}).addTo(layer);
+    m.on('dragend',e=>{const l=e.target.getLatLng();s.points[j]=[+l.lat.toFixed(5),+l.lng.toFixed(5),...(s.points[j][2]?[1]:[])];changed();autoRoute(s);drawMap();renderList()});
+    const box=document.createElement('div');box.style.cssText='display:flex;flex-direction:column;gap:6px';
+    if(j>0){const t=document.createElement('button');t.textContent=p[2]?'Tronçon précédent : suivre les chemins':'Tronçon précédent : ligne droite';
+     t.onclick=()=>{s.points[j]=p[2]?[p[0],p[1]]:[p[0],p[1],1];map.closePopup();changed();autoRoute(s);drawMap();renderList()};box.appendChild(t)}
     const b=document.createElement('button');b.textContent='Supprimer ce point';b.className='danger';
     b.onclick=()=>{s.points.splice(j,1);map.closePopup();changed();autoRoute(s);drawMap();renderList()};
-    m.bindPopup(b);
+    box.appendChild(b);m.bindPopup(box);
    });
    if(draw)for(let j=0;j<s.points.length-1;j++){
     const a=s.points[j],c=s.points[j+1],mid=L.latLng((a[0]+c[0])/2,(a[1]+c[1])/2);
-    const ins=ll=>{s.points.splice(j+1,0,[+ll.lat.toFixed(5),+ll.lng.toFixed(5)]);changed();autoRoute(s);drawMap();renderList()};
+    const ins=ll=>{s.points.splice(j+1,0,[+ll.lat.toFixed(5),+ll.lng.toFixed(5),...(s.points[j+1][2]?[1]:[])]);changed();autoRoute(s);drawMap();renderList()};
     const h=L.marker(mid,{draggable:true,icon:L.divIcon({className:'',iconSize:[22,22],html:'<div class="mid">+</div>'})}).addTo(layer);
     h.on('click',()=>ins(mid));h.on('dragend',e=>ins(e.target.getLatLng()));
    }
@@ -326,16 +334,19 @@ function drawMap(fit){
  if(fit&&all.length)map.fitBounds(all,{padding:[30,30]});else if(fit)map.setView([46.6,2.4],5);
  $('#vall').classList.toggle('on',view==='all');
  $('#vday').classList.toggle('on',view==='day');
- $('#bdraw').classList.toggle('on',draw);$('#bdraw').textContent=draw?'✔ Terminer la modification':'✏ Modifier l’itinéraire';$('#editbar').hidden=!draw;
+ $('#bdraw').classList.toggle('on',draw);$('#bdraw').textContent=draw?'✔ Terminer la modification':'✏ Modifier l’itinéraire';$('#editbar').hidden=!draw;const cs=cur();if(cs)$('#rmode').value=cs.rmode==='car'?'car':'foot';
  map.getContainer().style.cursor=draw?'crosshair':'';
 }
 map.on('click',e=>{
  if(!draw)return;
  const s=cur();if(!s)return toast('Ajoute d’abord une étape.');
  if(view!=='day'){view='day'}
- s.points.push([+e.latlng.lat.toFixed(5),+e.latlng.lng.toFixed(5)]);
+ s.points.push([+e.latlng.lat.toFixed(5),+e.latlng.lng.toFixed(5),...(directNext&&s.points.length?[1]:[])]);
  changed();autoRoute(s);drawMap();renderList();
 });
+let directNext=false;
+$('#bdirect').onclick=()=>{directNext=!directNext;const b=$('#bdirect');b.classList.toggle('on',directNext);b.textContent='↯ Ligne droite : '+(directNext?'oui':'non');if(directNext)toast('Les prochains points seront reliés en ligne droite (hors chemins).')};
+$('#rmode').onchange=()=>{const s=cur();if(!s)return;s.rmode=$('#rmode').value;changed();drawMap();renderList();if(autoOn)autoRoute(s);else toast('Clique sur « Calculer l’itinéraire » pour recalculer.')};
 $('#vall').onclick=()=>{view='all';drawMap(true)};
 $('#vday').onclick=()=>{view='day';drawMap(true)};
 $('#bdraw').onclick=()=>{draw=!draw;if(draw)view='day';drawMap();if(draw)toast('Touche la carte pour ajouter des points, ou un « + » entre deux points pour en insérer un.')};
@@ -357,18 +368,29 @@ async function routeStage(s,quiet){
  const my=(rtTok.get(s.id)||0)+1,k0=key(s),pts=s.points.slice();rtTok.set(s.id,my);
  try{
   let out=[],km=0;
-  for(let i=0;i<pts.length-1;i+=19){
-   const co=pts.slice(i,i+20).map(p=>p[1]+','+p[0]).join(';');
-   const r=await fetch('https://routing.openstreetmap.de/routed-foot/route/v1/driving/'+co+'?overview=full&geometries=geojson');
-   const j=await r.json();if(j.code!=='Ok')throw 0;
-   km+=j.routes[0].distance/1000;
-   j.routes[0].geometry.coordinates.forEach(([lo,la])=>{const q=[+la.toFixed(5),+lo.toFixed(5)];if(!out.length||map.distance(out[out.length-1],q)>20)out.push(q)});
+  const add=q=>{if(!out.length||map.distance(out[out.length-1],q)>20)out.push([+q[0].toFixed(5),+q[1].toFixed(5)])};
+  const mode=s.rmode==='car'?'car':'foot',segs=[];
+  let run=[pts[0]];
+  for(let j=1;j<pts.length;j++){
+   if(pts[j][2]){if(run.length>1)segs.push({pts:run});segs.push({pts:[pts[j-1],pts[j]],direct:true});run=[pts[j]]}
+   else run.push(pts[j]);
+  }
+  if(run.length>1)segs.push({pts:run});
+  for(const sg of segs){
+   if(sg.direct){sg.pts.forEach(add);km+=map.distance(sg.pts[0],sg.pts[1])/1000;continue}
+   for(let i=0;i<sg.pts.length-1;i+=19){
+    const co=sg.pts.slice(i,i+20).map(p=>p[1]+','+p[0]).join(';');
+    const r=await fetch('https://routing.openstreetmap.de/routed-'+mode+'/route/v1/driving/'+co+'?overview=full&geometries=geojson');
+    const j=await r.json();if(j.code!=='Ok')throw 0;
+    km+=j.routes[0].distance/1000;
+    j.routes[0].geometry.coordinates.forEach(([lo,la])=>add([la,lo]));
+   }
   }
   if(rtTok.get(s.id)!==my)return;
   s.route=out;s.routeKm=km;s.routeKey=k0;changed();renderList();drawMap();
   quiet||toast('Itinéraire calculé : '+km.toFixed(1)+' km');
   elevStage(s,true);
- }catch(e){quiet?warnOnce('route','Itinéraire à pied indisponible pour le moment.'):toast('Calcul impossible : service indisponible ou aucun chemin entre ces repères.')}
+ }catch(e){quiet?warnOnce('route','Itinéraire indisponible pour le moment (ou aucun chemin entre deux repères : touche un repère pour forcer une ligne droite).'):toast('Calcul impossible : service indisponible ou aucun chemin entre ces repères. Tu peux forcer un tronçon en ligne droite en touchant un repère.')}
 }
 async function autoFill(){
  if(!autoOn||!hasGh()||!curId)return;
@@ -537,7 +559,7 @@ const forList=L=>{const f=(L.for||[]).filter(x=>D.participants.includes(x));retu
 const hdTxt=(s,i)=>`<b>J${i+1} · ${esc(s.name)}</b><span class="meta">${fmtD(s.date)||'date ?'} · ${dist(s).toFixed(1)} km${s.elev?' · ↗ '+s.elev.up+' m':''}</span>`;
 const body=s=>{const L=lodgOf(s);return `<div class="bd">
  <div class="row"><input data-f="name" value="${esc(s.name)}"><input type="date" data-f="date" value="${esc(s.date)}"></div>
- <div class="meta">${s.points.length} repère(s) · ${okRoute(s)?'itinéraire à pied':s.route?'itinéraire à recalculer':'ligne droite'}</div>${elevHtml(s)}
+ <div class="meta">${s.points.length} repère(s) · ${okRoute(s)?(s.rmode==='car'?'itinéraire en voiture':'itinéraire à pied'):s.route?'itinéraire à recalculer':'ligne droite'}</div>${elevHtml(s)}
  <details data-k="l" data-id="${s.id}" ${openC.has('l'+s.id)?'open':''}><summary>Hébergement ${chip(s,0)}</summary><div class="lodg">
   <input data-l="name" placeholder="Nom de l’hébergement" value="${esc(L.name)}">
   <input data-l="address" placeholder="Adresse" value="${esc(L.address)}">
