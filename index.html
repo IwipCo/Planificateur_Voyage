@@ -39,7 +39,7 @@ main{display:grid;grid-template-rows:42vh 1fr;height:calc(100dvh - 52px)}
 .m{max-width:85%;padding:6px 10px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
 .m.me{align-self:flex-end;background:var(--me)}
 .m small{display:block;color:var(--mute);font-size:11px}
-.mid{box-sizing:border-box;width:16px;height:16px;border-radius:50%;background:var(--card);color:var(--ink);border:2px solid var(--sea);font:700 12px/11px system-ui;text-align:center;opacity:.9}
+.mid{box-sizing:border-box;width:22px;height:22px;border-radius:50%;background:var(--card);color:var(--ink);border:2px solid var(--sea);font:700 15px/17px system-ui;text-align:center;opacity:.92}
 #bar select{width:auto;flex:none}
 details{margin:6px 0}summary{cursor:pointer;color:var(--sea);font-weight:600}
 .sc{display:flex;flex-direction:column;gap:6px;margin:6px 0;max-height:240px;overflow:auto}
@@ -75,7 +75,8 @@ dialog p{font-size:13px;color:var(--mute)}
    <button id="vall">Tout le parcours</button>
    <button id="vday">Jour choisi</button>
    <button id="bdraw">✏ Tracer</button>
-   <button id="bgr">🟥 Afficher le GR34</button>
+   <button id="bgr">🟥 Afficher les GR</button>
+   <button id="bauto">⚡ Itinéraire auto : non</button>
    <button id="broute">🥾 Itinéraire à pied</button>
    <button id="bundo">↶ Retirer le dernier point</button>
   </div>
@@ -211,15 +212,15 @@ function drawMap(fit){
   }else{
    s.points.forEach((p,j)=>{
     const m=L.marker(p,{draggable:true,icon:L.divIcon({className:'',iconSize:[22,22],html:`<div class="wp" style="background:${col}">${j+1}</div>`})}).addTo(layer);
-    m.on('dragend',e=>{const l=e.target.getLatLng();s.points[j]=[l.lat,l.lng];changed();drawMap();renderList()});
+    m.on('dragend',e=>{const l=e.target.getLatLng();s.points[j]=[l.lat,l.lng];changed();autoRoute(s);drawMap();renderList()});
     const b=document.createElement('button');b.textContent='Supprimer ce point';b.className='danger';
-    b.onclick=()=>{s.points.splice(j,1);map.closePopup();changed();drawMap();renderList()};
+    b.onclick=()=>{s.points.splice(j,1);map.closePopup();changed();autoRoute(s);drawMap();renderList()};
     m.bindPopup(b);
    });
    if(draw)for(let j=0;j<s.points.length-1;j++){
     const a=s.points[j],c=s.points[j+1],mid=L.latLng((a[0]+c[0])/2,(a[1]+c[1])/2);
-    const ins=ll=>{s.points.splice(j+1,0,[+ll.lat.toFixed(5),+ll.lng.toFixed(5)]);changed();drawMap();renderList()};
-    const h=L.marker(mid,{draggable:true,icon:L.divIcon({className:'',iconSize:[16,16],html:'<div class="mid">+</div>'})}).addTo(layer);
+    const ins=ll=>{s.points.splice(j+1,0,[+ll.lat.toFixed(5),+ll.lng.toFixed(5)]);changed();autoRoute(s);drawMap();renderList()};
+    const h=L.marker(mid,{draggable:true,icon:L.divIcon({className:'',iconSize:[22,22],html:'<div class="mid">+</div>'})}).addTo(layer);
     h.on('click',()=>ins(mid));h.on('dragend',e=>ins(e.target.getLatLng()));
    }
   }
@@ -235,63 +236,48 @@ map.on('click',e=>{
  const s=cur();if(!s)return toast('Ajoute d’abord une étape.');
  if(view!=='day'){view='day'}
  s.points.push([+e.latlng.lat.toFixed(5),+e.latlng.lng.toFixed(5)]);
- changed();drawMap();renderList();
+ changed();autoRoute(s);drawMap();renderList();
 });
 $('#vall').onclick=()=>{view='all';drawMap(true)};
 $('#vday').onclick=()=>{view='day';drawMap(true)};
 $('#bdraw').onclick=()=>{draw=!draw;if(draw)view='day';drawMap();if(draw)toast('Touche la carte pour ajouter des points, ou un « + » entre deux points pour en insérer un.')};
 /* Itinéraire à pied : routage OSM (FOSSGIS), par blocs de 20 repères */
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-async function routeStage(s){
- if(!s||s.points.length<2)return toast('Place au moins 2 repères sur la carte (✏ Tracer).');
- toast('Calcul de l’itinéraire à pied…');
+const rtTok=new Map();
+let autoOn=localStorage.getItem('tp_auto')==='1',at;
+function setAuto(v,silent){autoOn=v;localStorage.setItem('tp_auto',v?'1':'0');
+ const b=$('#bauto');b.classList.toggle('on',v);b.textContent='⚡ Itinéraire auto : '+(v?'oui':'non');
+ if(!silent)toast(v?'Itinéraire recalculé automatiquement à chaque point.':'Itinéraire automatique désactivé.');
+ if(v&&!silent)autoRoute(cur())}
+function autoRoute(s){if(!autoOn||!s||s.points.length<2)return;clearTimeout(at);at=setTimeout(()=>routeStage(s,true),900)}
+async function routeStage(s,quiet){
+ if(!s||s.points.length<2)return quiet||toast('Place au moins 2 repères sur la carte (✏ Tracer).');
+ quiet||toast('Calcul de l’itinéraire à pied…');
+ const my=(rtTok.get(s.id)||0)+1,k0=key(s),pts=s.points.slice();rtTok.set(s.id,my);
  try{
   let out=[],km=0;
-  for(let i=0;i<s.points.length-1;i+=19){
-   const co=s.points.slice(i,i+20).map(p=>p[1]+','+p[0]).join(';');
+  for(let i=0;i<pts.length-1;i+=19){
+   const co=pts.slice(i,i+20).map(p=>p[1]+','+p[0]).join(';');
    const r=await fetch('https://routing.openstreetmap.de/routed-foot/route/v1/driving/'+co+'?overview=full&geometries=geojson');
    const j=await r.json();if(j.code!=='Ok')throw 0;
    km+=j.routes[0].distance/1000;
    j.routes[0].geometry.coordinates.forEach(([lo,la])=>{const q=[+la.toFixed(5),+lo.toFixed(5)];if(!out.length||map.distance(out[out.length-1],q)>12)out.push(q)});
   }
-  s.route=out;s.routeKm=km;s.routeKey=key(s);changed();renderList();drawMap();
-  toast('Itinéraire calculé : '+km.toFixed(1)+' km');
+  if(rtTok.get(s.id)!==my)return;
+  s.route=out;s.routeKm=km;s.routeKey=k0;changed();renderList();drawMap();
+  quiet||toast('Itinéraire calculé : '+km.toFixed(1)+' km');
   elevStage(s,true);
  }catch(e){toast('Calcul impossible : service indisponible ou aucun chemin entre ces repères.')}
 }
 $('#broute').onclick=()=>routeStage(cur());
-/* Affichage du GR34 seul : tracé OpenStreetMap (Overpass) */
-map.createPane('gr').style.zIndex=350;
-const grLayer=L.layerGroup().addTo(map);
-let grOn=localStorage.getItem('tp_gr')==='1',grC=null,gt;
-async function overpass(q){
- let err='';
- for(const u of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter']){
-  try{const r=await fetch(u+'?data='+encodeURIComponent(q));if(r.ok)return await r.json();err=u.split('/')[2]+' : '+r.status}catch(e){err=u.split('/')[2]+' : '+e.message}
- }
- throw new Error(err);
-}
-async function gr34(bb){
- if(grC&&bb[0]>=grC.bb[0]&&bb[1]>=grC.bb[1]&&bb[2]<=grC.bb[2]&&bb[3]<=grC.bb[3])return grC.ways;
- const p=.05,x=[bb[0]-p,bb[1]-p,bb[2]+p,bb[3]+p],b=x.map(v=>v.toFixed(4)).join(',');
- const j=await overpass('[out:json][timeout:25];relation["type"="route"]["ref"~"GR ?34($|;)"]('+b+')->.r;way(r.r)('+b+');out geom;');
- const ways=(j.elements||[]).filter(e=>e.geometry).map(e=>e.geometry.map(g=>[g.lat,g.lon]));
- grC={bb:x,ways};return ways;
-}
-async function drawGR(){
- if(!grOn)return;
- if(map.getZoom()<9){grLayer.clearLayers();return toast('Zoome un peu pour afficher le GR34.')}
- const b=map.getBounds().pad(.15);
- try{
-  const ways=await gr34([b.getSouth(),b.getWest(),b.getNorth(),b.getEast()]);
-  if(!grOn)return;grLayer.clearLayers();
-  ways.forEach(w=>L.polyline(w,{pane:'gr',color:'#c1121f',weight:7,opacity:.55,interactive:false}).addTo(grLayer));
-  if(!ways.length)toast('Aucun GR34 trouvé dans cette zone de la carte.');
- }catch(e){toast('GR34 indisponible ('+e.message+').')}
-}
-function setGR(v){grOn=v;localStorage.setItem('tp_gr',v?'1':'0');const b=$('#bgr');b.classList.toggle('on',v);b.textContent=v?'🟥 GR34 affiché':'🟥 Afficher le GR34';if(v)drawGR();else grLayer.clearLayers()}
+$('#bauto').onclick=()=>setAuto(!autoOn);
+setAuto(autoOn,true);
+/* Affichage des GR : calque de sentiers balisés Waymarked Trails */
+const grTiles=L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png',{maxZoom:18,opacity:.85,attribution:'Sentiers © <a href="https://hiking.waymarkedtrails.org">Waymarked Trails</a>'});
+let grOn=localStorage.getItem('tp_gr')==='1';
+function setGR(v){grOn=v;localStorage.setItem('tp_gr',v?'1':'0');if(v)grTiles.addTo(map);else map.removeLayer(grTiles);
+ const b=$('#bgr');b.classList.toggle('on',v);b.textContent=v?'🟥 GR affichés':'🟥 Afficher les GR'}
 $('#bgr').onclick=()=>setGR(!grOn);
-map.on('moveend',()=>{if(grOn){clearTimeout(gt);gt=setTimeout(drawGR,600)}});
 /* Nom d’étape automatique : « ville de départ - ville d’arrivée » (Nominatim) */
 let nt;function scheduleNames(){clearTimeout(nt);nt=setTimeout(autoNames,1500)}
 async function place(p){
@@ -313,7 +299,7 @@ async function autoNames(){
   await sleep(1100);
  }
 }
-$('#bundo').onclick=()=>{const s=cur();if(s&&s.points.length){s.points.pop();changed();drawMap();renderList()}};
+$('#bundo').onclick=()=>{const s=cur();if(s&&s.points.length){s.points.pop();changed();autoRoute(s);drawMap();renderList()}};
 
 /* ---------- Étapes ---------- */
 const openC=new Set();
