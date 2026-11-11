@@ -78,9 +78,9 @@ table.rc{width:100%;border-collapse:collapse;font-size:14px}.rc th,.rc td{paddin
 .lodg{margin:6px 0}.lodg input{margin-bottom:4px}
 input[type=checkbox]{width:auto}.chk{display:flex;gap:6px;align-items:center;white-space:nowrap}
 #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;display:none;z-index:9999;max-width:90vw}
-dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;max-width:440px;width:92vw}
-dialog[open]{display:flex;flex-direction:column;max-height:92dvh;padding:0}
-.dlg-b{overflow:auto;padding:14px 16px;flex:1}.dlg-f{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line);background:var(--card)}
+dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;max-width:520px;width:92vw}
+dialog[open]{display:flex;flex-direction:column;height:auto;max-height:90vh;max-height:90dvh;padding:0;overflow:hidden}
+.dlg-b{overflow:auto;padding:14px 16px;flex:0 1 auto;min-height:0}.dlg-f{flex:none;display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line);background:var(--card)}
 dialog label{display:block;margin:8px 0 2px;font-size:13px;color:var(--mute)}
 dialog p{font-size:13px;color:var(--mute)}
 </style>
