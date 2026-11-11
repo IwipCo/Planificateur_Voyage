@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Carnet de route</title>
+<meta name="theme-color" content="#1f6f78">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Carnet de route">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <style>
 :root{--bg:#eef2f1;--card:#fff;--ink:#14262c;--mute:#5d7077;--line:#d3dcdb;--sea:#1f6f78;--gorse:#d9a441;--bad:#b3402f;--me:#d5ebe9}
@@ -61,12 +68,19 @@ table.rc{width:100%;border-collapse:collapse;font-size:14px}.rc th,.rc td{paddin
 #cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;padding:12px}
 .tc{position:relative;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column}
 .x{position:absolute;top:6px;right:6px;width:26px;height:26px;padding:0;line-height:1;border-radius:50%}
-.tc .band{height:10px}.tc .tb{padding:10px 12px;display:flex;flex-direction:column;gap:4px}.tc b{font:600 16px Georgia,serif}
+.tc .band{height:64px;display:flex;align-items:center;justify-content:center;font-size:28px}.tc .cv{width:100%;height:110px;object-fit:cover;display:block}
+.cvp{max-width:100%;max-height:120px;border-radius:8px;display:block;margin:4px 0}.tc .tb{padding:10px 12px;display:flex;flex-direction:column;gap:4px}.tc b{font:600 16px Georgia,serif}
 .tc.new{border-style:dashed;justify-content:center;min-height:110px;color:var(--sea);align-items:center;text-align:center}
+.ic{padding:2px 6px;border:0;background:none;font-size:15px}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:8px;margin:6px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px}.stat b{display:block;font-size:17px}
+.card.tr{border-left-color:var(--gorse)}.leg{border-top:1px solid var(--line);padding:6px 0}
 .lodg{margin:6px 0}.lodg input{margin-bottom:4px}
 input[type=checkbox]{width:auto}.chk{display:flex;gap:6px;align-items:center;white-space:nowrap}
 #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;display:none;z-index:9999;max-width:90vw}
 dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;max-width:440px;width:92vw}
+dialog[open]{display:flex;flex-direction:column;max-height:92dvh;padding:0}
+.dlg-b{overflow:auto;padding:14px 16px;flex:1}.dlg-f{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line);background:var(--card)}
 dialog label{display:block;margin:8px 0 2px;font-size:13px;color:var(--mute)}
 dialog p{font-size:13px;color:var(--mute)}
 </style>
@@ -92,23 +106,24 @@ dialog p{font-size:13px;color:var(--mute)}
    <button id="vday" title="Voir le jour choisi">Jour</button>
    <button id="bdraw" title="Poser des points sur la carte">✏ Tracer</button>
    <button id="bgr" title="Afficher ou masquer les GR">🟥 GR</button>
-   <button id="btr" title="Afficher ou masquer les trajets domicile ↔ départ / arrivée">🚆 Trajets</button>
-   <button id="bauto" title="Recalculer l’itinéraire à chaque point posé">⚡ Auto : non</button>
-   <button id="broute" title="Calculer l’itinéraire à pied du jour choisi">🥾 Itinéraire</button>
-   <button id="bundo" title="Retirer le dernier point">↶ Annuler</button>
+   <button id="btr" title="Afficher ou masquer les trajets aller / retour">🚆 Trajets</button>
+   <button id="bauto" title="Calcul automatique de l’itinéraire et du dénivélé">⚡ Auto : oui</button>
+   <button id="broute" title="Calculer l’itinéraire à pied du jour choisi" hidden>🥾 Itinéraire</button>
+   <button id="bundo" title="Retirer le dernier point">✕ Point</button>
   </div>
   <div id="map"></div>
  </div>
  <div id="panel">
-  <div class="tabs"><button data-t="stages" class="on">Jours</button><button data-t="lodg">Hébergement</button><button data-t="trans">Trajets</button><button data-t="chat">Discussion</button><button data-t="trip">Voyage</button></div>
-  <section id="p-stages"><p class="sum" id="sum"></p><div class="row"><button id="bexp">Tout déplier</button><button id="bcol">Tout réduire</button></div><div id="list"></div><button id="badd">+ Ajouter un jour</button></section>
+  <div class="tabs"><button data-t="stages" class="on">Jours</button><button data-t="lodg">Hébergement</button><button data-t="recap">Récap</button><button data-t="chat">Discussion</button><button data-t="trip">Voyage</button></div>
+  <section id="p-stages"><p class="sum" id="sum"></p><div class="row"><button id="bexp">Tout déplier</button><button id="bcol">Tout réduire</button><button id="breorg">⇅ Réorganiser</button></div><div id="list"></div><button id="badd">+ Ajouter un jour</button></section>
   <section id="p-lodg" hidden></section>
-  <section id="p-trans" hidden></section>
+  <section id="p-recap" hidden></section>
   <section id="p-trip" hidden>
    <label class="lb">Nom du voyage</label><input id="t-name">
    <div class="row"><div class="grow"><label class="lb">Départ</label><input type="date" id="t-start"></div><div class="grow"><label class="lb">Arrivée</label><input type="date" id="t-end"></div></div>
    <label class="lb">Participants (séparés par des virgules)</label><input id="t-parts">
-   <div id="t-homes"></div>
+   <label class="lb">Image de couverture</label><div id="t-cover-prev"></div>
+   <div class="row"><input type="file" id="t-cover" accept="image/*"><button id="t-cover-del">Retirer</button></div>
    <p class="meta" id="t-info"></p>
    <button id="t-fill">Remplir les dates des jours depuis le départ</button>
    <p><button id="t-del" class="danger">Supprimer ce voyage</button></p>
@@ -122,13 +137,13 @@ dialog p{font-size:13px;color:var(--mute)}
 </main>
 </div>
 <dialog id="dlg">
+<div class="dlg-b">
  <h3 style="margin:0 0 4px">Réglages</h3>
  <label>Qui es-tu ? (auteur de tes messages)</label><input id="c-me" placeholder="Ton prénom">
  <label>Propriétaire du dépôt GitHub</label><input id="c-owner">
  <label>Nom du dépôt</label><input id="c-repo">
  <label>Branche</label><input id="c-branch">
- <label>Dossier des voyages</label><input id="c-dir">
- <label>Ancien fichier unique (migration)</label><input id="c-path">
+ <label>Fichier de données (tous les voyages)</label><input id="c-path">
  <label>Token GitHub</label><input id="c-token" type="password" autocomplete="off">
  <p>Crée un token « fine-grained » limité à ce dépôt, avec la permission Contents : Read and write. Il reste uniquement dans ce navigateur. Chaque participant utilise le sien.</p>
  <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
@@ -136,7 +151,8 @@ dialog p{font-size:13px;color:var(--mute)}
  <div class="row"><button id="c-link">Générer et copier le lien</button></div>
  <input id="c-url" readonly placeholder="Le lien apparaîtra ici">
  <p>⚠ Ce lien contient ton token : quiconque l'ouvre peut modifier le dépôt. Envoie-le par un canal privé et révoque le token sur GitHub si le lien fuite.</p>
- <div class="row"><button id="c-ok" class="pri">Valider</button><button id="c-x">Fermer</button></div>
+ </div>
+<div class="dlg-f"><button id="c-ok" class="pri">Valider</button><button id="c-x">Fermer</button></div>
 </dialog>
 <div id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
@@ -155,10 +171,11 @@ const C=Object.assign({path:'data.json',branch:'main',dir:'data'},guess(),JSON.p
 const openS=new Set();
 let D=structuredClone(DEF),sha=null,sel=null,view='all',draw=false,dirty=false;
 
-/* ---------- GitHub : un index + un fichier par voyage ---------- */
+/* ---------- GitHub : un seul fichier de données pour tous les voyages ---------- */
 const api=p=>`https://api.github.com/repos/${C.owner}/${C.repo}/contents/${p}`;
 const hdr=()=>({Authorization:'Bearer '+C.token,Accept:'application/vnd.github+json'});
 const hasGh=()=>C.token&&C.owner&&C.repo;
+const em=e=>e instanceof SyntaxError?'fichier illisible':(e&&e.message==='404'?'introuvable':(e&&e.message?e.message:String(e)));
 async function ghGet(p){
  const u=api(p)+'?ref='+C.branch+'&t='+Date.now();
  const r=await fetch(u,{headers:hdr(),cache:'no-store'});
@@ -168,11 +185,6 @@ async function ghGet(p){
  else{const r2=await fetch(u,{headers:{...hdr(),Accept:'application/vnd.github.raw+json'},cache:'no-store'});if(!r2.ok)throw new Error(r2.status);txt=await r2.text()}
  return{sha:j.sha,data:JSON.parse(txt)};
 }
-async function ghSha(p){
- const r=await fetch(api(p)+'?ref='+C.branch+'&t='+Date.now(),{headers:hdr(),cache:'no-store'});
- if(!r.ok)throw new Error(r.status);
- return (await r.json()).sha;
-}
 async function ghPut(p,obj,sh,msg){
  const body={message:msg,branch:C.branch,content:btoa(unescape(encodeURIComponent(JSON.stringify(obj))))};
  if(sh)body.sha=sh;
@@ -180,77 +192,91 @@ async function ghPut(p,obj,sh,msg){
  if(!r.ok)throw new Error(r.status);
  return (await r.json()).content.sha;
 }
-async function ghDel(p,sh){
- const r=await fetch(api(p),{method:'DELETE',headers:hdr(),body:JSON.stringify({message:'Suppression d’un voyage',sha:sh,branch:C.branch})});
- if(!r.ok)throw new Error(r.status);
+function norm(d){
+ d.stages=d.stages||[];d.messages=d.messages||[];d.participants=Array.isArray(d.participants)&&d.participants.length?d.participants:['Moi'];
+ d.start=d.start||'';d.end=d.end||'';d.title=d.title||'';d.transports=d.transports||[];d.homes=d.homes||{};
+ d.stages.forEach(s=>{s.points=Array.isArray(s.points)?s.points:[];const L=s.lodging=s.lodging||{name:'',address:'',price:'',status:'find'};if(!L.status)L.status=L.booked?'booked':'find';delete L.booked;L.nights=L.nights||1});
 }
-function norm(){
- D.stages=D.stages||[];D.messages=D.messages||[];D.participants=D.participants||['Moi'];D.start=D.start||'';D.end=D.end||'';D.transports=D.transports||[];D.homes=D.homes||{};
- D.stages.forEach(s=>{s.points=s.points||[];const L=s.lodging=s.lodging||{name:'',address:'',price:'',status:'find'};if(!L.status)L.status=L.booked?'booked':'find';delete L.booked;L.nights=L.nights||1});
+function wrap(d){
+ if(d&&Array.isArray(d.trips))return d;
+ if(d&&Array.isArray(d.stages)){d.id=d.id||'legacy';return{version:2,trips:[d]}}
+ return{version:2,trips:[]};
 }
-let IDX={trips:[]},idxSha=null,idxDirty=false,curId=null;
-const newData={},deleted=new Set();
-const idxPath=()=>C.dir+'/index.json';
-const tpath=()=>{const m=IDX.trips.find(t=>t.id===curId);return(m&&m.file)||C.dir+'/'+curId+'.json'};
-function metaOf(d,id,file){
- const st=d.stages||[],km=st.reduce((a,s)=>a+(s.points&&s.points.length>1?dist(s):0),0);
- const m={id,name:d.title||'',start:d.start||'',end:d.end||'',participants:d.participants||[],days:st.length,km:Math.round(km),updated:Date.now()};
- if(file)m.file=file;return m;
-}
-function upsertMeta(){
- if(!curId)return false;
- const old=IDX.trips.find(t=>t.id===curId),nm=metaOf(D,curId,old&&old.file);
- if(old&&JSON.stringify({...old,updated:0})===JSON.stringify({...nm,updated:0}))return false;
- if(old)Object.assign(old,nm);else IDX.trips.push(nm);
- idxDirty=true;return true;
-}
-async function loadIndex(){
- IDX={trips:[]};idxSha=null;
+let ALL={version:2,trips:[]},allSha=null,loaded=false,loadErr='',curId=null;
+const deleted=new Set(),touched=new Set(),createdLocal=new Set();
+async function loadAll(){
+ ALL={version:2,trips:[]};allSha=null;loaded=false;loadErr='';
+ let migrated=false;
  if(hasGh()){
-  try{const r=await ghGet(idxPath());IDX=r.data;IDX.trips=IDX.trips||[];idxSha=r.sha;return}
-  catch(e){
-   if(e.message==='404'){
-    try{const r=await ghGet(C.path);IDX={trips:[metaOf(r.data,'legacy',C.path)]};idxDirty=true;return}
-    catch(e2){if(e2.message==='404'){IDX={trips:[]};return}toast('GitHub : erreur '+e2.message+' (token ou dépôt ?). Lecture seule.')}
-   }else toast('GitHub : erreur '+e.message+' (token ou dépôt ?). Lecture seule.');
+  try{const r=await ghGet(C.path);ALL=wrap(r.data);allSha=r.sha;loaded=true;if(!Array.isArray(r.data.trips))migrated=true}
+  catch(e){if(e.message==='404')loaded=true;else loadErr='Lecture de '+C.path+' impossible ('+em(e)+')'}
+  if(loaded&&!ALL.migrated){
+   try{
+    const ix=await ghGet(C.dir+'/index.json');
+    for(const m of ix.data.trips||[]){
+     if(m.file===C.path||ALL.trips.some(t=>t.id===m.id))continue;
+     try{const r=await ghGet(m.file||C.dir+'/'+m.id+'.json');r.data.id=m.id;ALL.trips.push(r.data);migrated=true}catch(e){}
+    }
+   }catch(e){}
+   if(migrated)ALL.migrated=true;
   }
  }
- try{const r=await fetch(idxPath()+'?t='+Date.now());if(r.ok){IDX=await r.json();IDX.trips=IDX.trips||[];return}}catch(e){}
- try{const r=await fetch(C.path+'?t='+Date.now());if(r.ok)IDX={trips:[metaOf(await r.json(),'legacy',C.path)]}}catch(e){}
-}
-async function saveIndex(){
- let remote=null,rs=null;
- try{const r=await ghGet(idxPath());remote=r.data;rs=r.sha}catch(e){if(e.message!=='404')throw e}
- const mine=IDX.trips.find(t=>t.id===curId);
- const rt=(remote?(remote.trips||[]):IDX.trips.filter(t=>t.id===curId||t.file)).filter(t=>!deleted.has(t.id));
- if(remote&&mine){const i=rt.findIndex(t=>t.id===mine.id);if(i>=0)rt[i]=mine;else rt.push(mine)}
- IDX={trips:rt};
- idxSha=await ghPut(idxPath(),IDX,rs,'Index des voyages');idxDirty=false;
+ if(!loaded){
+  try{const r=await fetch(C.path+'?t='+Date.now());if(r.ok){ALL=wrap(await r.json());if(!hasGh())loaded=true}}catch(e){}
+ }
+ ALL.trips.forEach(t=>norm(t));
+ if(migrated&&hasGh()&&loaded){
+  try{allSha=await ghPut(C.path,ALL,allSha,'Regroupement de tous les voyages dans un seul fichier');toast('Tous tes voyages sont maintenant regroupés dans '+C.path+'.')}
+  catch(e){loadErr='Regroupement non enregistré ('+em(e)+')';dirty=true}
+ }
 }
 function mergeList(a,b){const ids=new Set(a.map(m=>m.id));b.forEach(m=>{if(!ids.has(m.id))a.push(m)});a.sort((x,y)=>x.ts-y.ts)}
-function mergeMsgs(rd){
- mergeList(D.messages,rd.messages||[]);
- (rd.stages||[]).forEach(rs=>{const s=D.stages.find(x=>x.id===rs.id);if(s&&rs.chat&&rs.chat.length){s.chat=s.chat||[];mergeList(s.chat,rs.chat)}});
+function mergeMsgs(rt,lt){
+ lt=lt||D;
+ mergeList(lt.messages,rt.messages||[]);
+ (rt.stages||[]).forEach(rs=>{const s=lt.stages.find(x=>x.id===rs.id);if(s&&rs.chat&&rs.chat.length){s.chat=s.chat||[];mergeList(s.chat,rs.chat)}});
+}
+function mergeAll(rem){
+ const loc=new Map(ALL.trips.map(t=>[t.id,t])),out=[];
+ rem.trips.forEach(rt=>{
+  if(deleted.has(rt.id))return;
+  const lt=loc.get(rt.id);
+  if(!lt){norm(rt);out.push(rt);return}
+  if(touched.has(rt.id)||rt.id===curId){mergeMsgs(rt,lt);out.push(lt)}else{norm(rt);out.push(rt)}
+  loc.delete(rt.id);
+ });
+ loc.forEach(lt=>{if(!deleted.has(lt.id)&&createdLocal.has(lt.id))out.push(lt)});
+ ALL.trips=out;
+ if(curId)D=out.find(t=>t.id===curId)||D;
 }
 async function save(){
  if(!hasGh()){openSet();return toast('Renseigne le token GitHub pour enregistrer.')}
- if(!curId)return;
+ if(!loaded)return toast('Le fichier de données n’a pas pu être lu : enregistrement bloqué pour ne rien écraser.');
  status('Enregistrement…');
  try{
-  const p=tpath();
-  try{const r=await ghGet(p);if(r.sha!==sha){mergeMsgs(r.data);sha=r.sha}}catch(e){if(e.message!=='404')throw e;sha=null}
-  sha=await ghPut(p,D,sha,'« '+(D.title||'Voyage')+' » par '+(C.me||'?'));
-  if(upsertMeta()||idxDirty)await saveIndex();
-  dirty=false;status('✓ Enregistré');renderChat();
- }catch(e){status('⚠ Échec');toast('Enregistrement impossible (erreur '+e.message+'). Vérifie le token et le dépôt.')}
+  let rem=null,rs=null;
+  try{const r=await ghGet(C.path);rem=r.data;rs=r.sha}catch(e){if(e.message!=='404')throw e}
+  if(rem&&rs!==allSha)mergeAll(wrap(rem));
+  allSha=await ghPut(C.path,ALL,rs,'Voyages mis à jour par '+(C.me||'?'));
+  touched.clear();createdLocal.clear();dirty=false;status('✓ Enregistré');renderChat();
+ }catch(e){status('⚠ Échec');toast('Enregistrement impossible (erreur '+em(e)+'). Vérifie le token et le dépôt.')}
 }
-function changed(){dirty=true;status('● Non enregistré');scheduleNames()}
+function markDirty(){dirty=true;status('● Non enregistré');if(curId)touched.add(curId)}
+function changed(){markDirty();scheduleNames()}
 function status(t){$('#st').textContent=t}
 function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',4000)}
 
 /* ---------- Carte ---------- */
 const map=L.map('map').setView([48.78,-3.3],10);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
+const BASES={
+ 'Plan':L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}),
+ 'Topo (courbes de niveau)':L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© OpenStreetMap, SRTM · © OpenTopoMap'}),
+ 'IGN Plan':L.tileLayer('https://data.geopf.fr/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',{maxZoom:18,attribution:'© IGN'}),
+ 'Satellite':L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri'})
+};
+(BASES[localStorage.getItem('tp_base')]||BASES['Plan']).addTo(map);
+L.control.layers(BASES,null,{position:'topright'}).addTo(map);
+map.on('baselayerchange',e=>localStorage.setItem('tp_base',e.name));
 const layer=L.layerGroup().addTo(map);
 const cur=()=>D.stages.find(s=>s.id===sel);
 const key=s=>s.points.map(p=>p.join(',')).join(';');
@@ -269,7 +295,7 @@ function drawMap(fit){
   const col=COL[i%COL.length],show=view==='all'||s.id===sel;
   if(!show||!s.points.length)return;
   all.push(...s.points);
-  if(okRoute(s))L.polyline(s.route,{color:col,weight:5,opacity:.9}).addTo(layer);
+  if(okRoute(s))L.polyline(s.route,{color:col,weight:s.id===sel&&view==='all'?8:5,opacity:.9}).addTo(layer);
   else if(s.points.length>1)L.polyline(s.points,{color:col,weight:4,opacity:.8,dashArray:'6 8'}).addTo(layer);
   if(view==='all'){
    L.marker(midOf(okRoute(s)?s.route:s.points),{icon:L.divIcon({className:'',iconSize:[28,28],html:`<div class="dayb" style="background:${col}">J${i+1}</div>`})}).on('click',()=>goStage(s.id)).addTo(layer);
@@ -308,12 +334,15 @@ $('#vday').onclick=()=>{view='day';drawMap(true)};
 $('#bdraw').onclick=()=>{draw=!draw;if(draw)view='day';drawMap();if(draw)toast('Touche la carte pour ajouter des points, ou un « + » entre deux points pour en insérer un.')};
 /* Itinéraire à pied : routage OSM (FOSSGIS), par blocs de 20 repères */
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const rtTok=new Map();
-let autoOn=localStorage.getItem('tp_auto')==='1',at;
-function setAuto(v,silent){autoOn=v;localStorage.setItem('tp_auto',v?'1':'0');
- const b=$('#bauto');b.classList.toggle('on',v);b.textContent='⚡ Auto : '+(v?'oui':'non');
- if(!silent)toast(v?'Itinéraire recalculé automatiquement à chaque point.':'Itinéraire automatique désactivé.');
- if(v&&!silent)autoRoute(cur())}
+const rtTok=new Map(),elBusy=new Set(),tried=new Set(),warned=new Set();
+const warnOnce=(k,m)=>{if(warned.has(k))return;warned.add(k);toast(m)};
+let autoOn=localStorage.getItem('tp_auto')!=='0',at;
+function setAuto(v,silent){
+ autoOn=v;localStorage.setItem('tp_auto',v?'1':'0');
+ const b=$('#bauto');b.classList.toggle('on',v);b.textContent='⚡ Auto : '+(v?'oui':'non');$('#broute').hidden=v;
+ if(!silent)toast(v?'Itinéraire et dénivelé calculés automatiquement.':'Calcul automatique désactivé.');
+ if(v&&!silent){autoRoute(cur());autoFill()}
+}
 function autoRoute(s){if(!autoOn||!s||s.points.length<2)return;clearTimeout(at);at=setTimeout(()=>routeStage(s,true),900)}
 async function routeStage(s,quiet){
  if(!s||s.points.length<2)return quiet||toast('Place au moins 2 repères sur la carte (✏ Tracer).');
@@ -332,7 +361,18 @@ async function routeStage(s,quiet){
   s.route=out;s.routeKm=km;s.routeKey=k0;changed();renderList();drawMap();
   quiet||toast('Itinéraire calculé : '+km.toFixed(1)+' km');
   elevStage(s,true);
- }catch(e){toast('Calcul impossible : service indisponible ou aucun chemin entre ces repères.')}
+ }catch(e){quiet?warnOnce('route','Itinéraire à pied indisponible pour le moment.'):toast('Calcul impossible : service indisponible ou aucun chemin entre ces repères.')}
+}
+async function autoFill(){
+ if(!autoOn||!hasGh()||!curId)return;
+ const id=curId;
+ for(const s of D.stages){
+  if(curId!==id)return;
+  if(s.points.length<2)continue;
+  if(!okRoute(s)&&!tried.has('r'+s.id)){tried.add('r'+s.id);await routeStage(s,true);await sleep(1200)}
+  if(curId!==id)return;
+  if(s.points.length>1&&(!s.elev||s.elevKey!==elevKey(s))&&!tried.has('e'+s.id)){tried.add('e'+s.id);await elevStage(s,true);await sleep(1200)}
+ }
 }
 $('#broute').onclick=()=>routeStage(cur());
 $('#bauto').onclick=()=>setAuto(!autoOn);
@@ -357,7 +397,7 @@ async function autoNames(){
   if(s.geoKey===k)continue;
   try{
    const a=await place(A);await sleep(1100);const b=await place(B);
-   if(a&&b){s.name=a+' - '+b;s.geoKey=k;dirty=true;status('● Non enregistré');
+   if(a&&b){s.name=a+' - '+b;s.geoKey=k;markDirty();
     const el=document.querySelector('.card[data-id="'+s.id+'"] [data-f=name]');if(el)el.value=s.name;
     const h=document.querySelector('.card[data-id="'+s.id+'"] .hd .tt');if(h)h.innerHTML=hdTxt(s,D.stages.indexOf(s))}
   }catch(e){}
@@ -368,7 +408,7 @@ $('#bundo').onclick=()=>{const s=cur();if(s&&s.points.length){s.points.pop();cha
 
 /* ---------- Étapes ---------- */
 const openC=new Set();
-/* ---- Dénivelé & profil (Open-Meteo, altitudes) ---- */
+/* ---- Dénivelé & profil (Open-Meteo, puis OpenTopoData en secours) ---- */
 const elevKey=s=>key(s)+'|'+(s.routeKey||'');
 function samples(s){
  const line=okRoute(s)?s.route:s.points,cum=[0];
@@ -381,22 +421,41 @@ function samples(s){
  }
  return out;
 }
-async function elevStage(s,quiet){
- if(!s||s.points.length<2)return quiet||toast('Place au moins 2 repères sur la carte.');
- quiet||toast('Calcul du dénivelé…');
- try{
-  const sm=samples(s),z=[];
-  for(let i=0;i<sm.length;i+=100){
-   const c=sm.slice(i,i+100);
-   const r=await fetch('https://api.open-meteo.com/v1/elevation?latitude='+c.map(p=>p.la.toFixed(5)).join(',')+'&longitude='+c.map(p=>p.lo.toFixed(5)).join(','));
-   const j=await r.json();if(!j.elevation)throw 0;z.push(...j.elevation);
+let elFail=0;
+async function fetchElev(c){
+ const q1=async()=>{
+  const r=await fetch('https://api.open-meteo.com/v1/elevation?latitude='+c.map(p=>p.la.toFixed(5)).join(',')+'&longitude='+c.map(p=>p.lo.toFixed(5)).join(','));
+  const j=await r.json();
+  if(!j.elevation||j.elevation.length!==c.length)throw new Error(j.reason||('HTTP '+r.status));
+  return j.elevation;
+ };
+ const q2=async()=>{
+  const r=await fetch('https://api.opentopodata.org/v1/eudem25m,srtm30m?locations='+c.map(p=>p.la.toFixed(5)+','+p.lo.toFixed(5)).join('|'));
+  const j=await r.json();
+  if(!j.results||j.results.length!==c.length)throw new Error(j.error||('HTTP '+r.status));
+  return j.results.map(x=>x.elevation==null?0:x.elevation);
+ };
+ if(Date.now()-elFail>600000){
+  try{return await q1()}catch(e1){
+   elFail=Date.now();
+   try{await sleep(1100);return await q2()}catch(e2){throw new Error('Open-Meteo : '+e1.message+' · OpenTopoData : '+e2.message)}
   }
+ }
+ return await q2();
+}
+async function elevStage(s,quiet){
+ if(!s||s.points.length<2||elBusy.has(s.id))return;
+ elBusy.add(s.id);
+ try{
+  const k0=elevKey(s),sm=samples(s),z=[];
+  for(let i=0;i<sm.length;i+=100){z.push(...await fetchElev(sm.slice(i,i+100)));if(i+100<sm.length)await sleep(1100)}
   const sz=z.map((v,i)=>{const a=z.slice(Math.max(0,i-2),i+3);return a.reduce((x,y)=>x+y,0)/a.length});
   let up=0,dn=0,ref=sz[0];
   for(const v of sz){if(v-ref>=3){up+=v-ref;ref=v}else if(ref-v>=3){dn+=ref-v;ref=v}}
   s.elev={d:sm.map(p=>+p.d.toFixed(2)),z:sz.map(Math.round),up:Math.round(up),dn:Math.round(dn),min:Math.round(Math.min(...sz)),max:Math.round(Math.max(...sz))};
-  s.elevKey=elevKey(s);changed();renderList();
- }catch(e){quiet||toast('Dénivelé indisponible (service d’altitude injoignable).')}
+  s.elevKey=k0;changed();renderList();
+ }catch(e){warnOnce('elev','Dénivelé indisponible : '+em(e))}
+ finally{elBusy.delete(s.id)}
 }
 function profSvg(s){
  const e=s.elev,W=300,H=80,P=4,dm=e.d[e.d.length-1]||1,lo=e.min,hi=Math.max(e.max,lo+10);
@@ -404,7 +463,7 @@ function profSvg(s){
  const pts=e.d.map((d,i)=>x(d).toFixed(1)+','+y(e.z[i]).toFixed(1)).join(' ');
  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Profil altimétrique"><polygon points="${P},${H-P} ${pts} ${W-P},${H-P}" fill="var(--sea)" opacity=".25"/><polyline points="${pts}" fill="none" stroke="var(--sea)" stroke-width="1.5"/></svg><div class="meta" style="display:flex;justify-content:space-between"><span>min ${e.min} m</span><span>${dm.toFixed(1)} km</span><span>max ${e.max} m</span></div>`;
 }
-const elevHtml=s=>{try{return s.elev?`<div class="meta">↗ ${s.elev.up} m · ↘ ${s.elev.dn} m${s.elevKey!==elevKey(s)?' · à recalculer':''}</div>`+profSvg(s):'<div class="meta">Dénivelé : non calculé</div>'}catch(e){return''}};
+const elevHtml=s=>{try{return s.elev?`<div class="meta">↗ ${s.elev.up} m · ↘ ${s.elev.dn} m${s.elevKey!==elevKey(s)?' · à recalculer':''}</div>`+profSvg(s):'<div class="meta">Dénivelé : calcul en cours ou non disponible</div>'}catch(e){return''}};
 /* ---- Météo & marées (Open-Meteo) ---- */
 const WX={};
 const wxk=s=>s.date+'|'+(s.points[0]||[]).join(',');
@@ -467,32 +526,47 @@ const lodgOf=s=>s.lodging||{};
 const chip=(s,bed=1)=>{const t=LS[lodgOf(s).status]||LS.find;return `<span class="chip ${t[2]}"${bed?' data-bed="1"':''}>${bed?'🛏 ':''}${t[0]} ${t[1]}</span>`};
 const nightsList=()=>{if(!D.start||!D.end||D.end<=D.start)return[];const o=[];for(let d=D.start;d<D.end&&o.length<400;d=addD(d,1))o.push(d);return o};
 function coverMap(){const m={};D.stages.forEach(s=>{const L=lodgOf(s);if(!s.date||L.status==='na'||!(L.name||'').trim())return;for(let k=0;k<Math.max(1,+L.nights||1);k++)m[addD(s.date,k)]=s});return m}
+const forList=L=>{const f=(L.for||[]).filter(x=>D.participants.includes(x));return f.length?f:D.participants};
 const hdTxt=(s,i)=>`<b>J${i+1} · ${esc(s.name)}</b><span class="meta">${fmtD(s.date)||'date ?'} · ${dist(s).toFixed(1)} km${s.elev?' · ↗ '+s.elev.up+' m':''}</span>`;
 const body=s=>{const L=lodgOf(s);return `<div class="bd">
  <div class="row"><input data-f="name" value="${esc(s.name)}"><input type="date" data-f="date" value="${esc(s.date)}"></div>
  <div class="meta">${s.points.length} repère(s) · ${okRoute(s)?'itinéraire à pied':s.route?'itinéraire à recalculer':'ligne droite'}</div>${elevHtml(s)}
- <div class="row" style="flex-wrap:wrap"><button data-a="view">Voir</button><button data-a="route">🥾 Itinéraire</button><button data-a="elev">📈 Profil</button></div>
  <details data-k="l" data-id="${s.id}" ${openC.has('l'+s.id)?'open':''}><summary>Hébergement ${chip(s,0)}</summary><div class="lodg">
   <input data-l="name" placeholder="Nom de l’hébergement" value="${esc(L.name)}">
   <input data-l="address" placeholder="Adresse" value="${esc(L.address)}">
   <div class="row"><input data-l="price" type="number" min="0" step="1" placeholder="Prix total (€)" value="${esc(L.price)}"><input data-l="nights" type="number" min="1" max="30" step="1" style="width:64px" title="Nombre de nuits" value="${L.nights||1}"><span class="meta">nuit(s)</span></div>
-  <select data-l="status">${Object.entries(LS).map(([k,v])=>`<option value="${k}" ${L.status===k?'selected':''}>${v[1]}</option>`).join('')}</select></div></details>
- <textarea data-f="notes" rows="2" placeholder="Notes : ravitaillement, marées, météo…">${esc(s.notes)}</textarea>
+  <div class="row"><select data-l="status">${Object.entries(LS).map(([k,v])=>`<option value="${k}" ${L.status===k?'selected':''}>${v[1]}</option>`).join('')}</select>
+  <select data-l="payer"><option value="">Payé par ?</option>${D.participants.map(p=>`<option value="${esc(p)}" ${L.payer===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
+  <div class="meta">Concerne :</div><div class="row" style="flex-wrap:wrap">${D.participants.map(p=>`<label class="chk"><input type="checkbox" data-lfor="${esc(p)}" ${forList(L).includes(p)?'checked':''}>${esc(p)}</label>`).join('')}</div>
+ </div></details>
  <details data-k="w" data-id="${s.id}" ${openC.has('w'+s.id)?'open':''}><summary>🌤 Météo &amp; marées</summary><div class="wx" data-id="${s.id}">${(WX[s.id]||{}).html||'<p class="meta">Chargement…</p>'}</div></details>
  <details data-k="c" data-id="${s.id}" ${openC.has('c'+s.id)?'open':''}><summary>💬 Discussion (${(s.chat||[]).length})</summary><div class="sc" data-id="${s.id}">${chatHtml(s)}</div>
   <div class="row"><input class="cin" placeholder="Message sur ce jour…"><button class="pri" data-a="csend">Envoyer</button></div></details>
- <div class="row" style="flex-wrap:wrap"><button data-a="auto">Nom auto</button><button data-a="up" aria-label="Monter">↑</button><button data-a="down" aria-label="Descendre">↓</button><button data-a="del" class="danger">Supprimer</button></div>
+ <textarea data-f="notes" rows="3" placeholder="Notes : ravitaillement, marées, météo…">${esc(s.notes)}</textarea>
 </div>`};
+let reorg=false;
 function renderList(){
  renderSum();
- $('#list').innerHTML=D.stages.map((s,i)=>`<div class="card ${s.id===sel?'on':''}" data-id="${s.id}">
-  <div class="hd" data-a="tog"><span class="chev">${openS.has(s.id)?'▾':'▸'}</span><span class="dot" style="background:${COL[i%COL.length]}"></span><div class="tt">${hdTxt(s,i)}</div>${chip(s)}</div>${openS.has(s.id)?body(s):''}</div>`).join('')||'<p class="meta">Aucun jour. Ajoutes-en un pour commencer.</p>';
+ const cards=D.stages.map((s,i)=>{
+  const o=!reorg&&openS.has(s.id);
+  return `<div class="card ${s.id===sel?'on':''}" data-id="${s.id}">
+  <div class="hd" data-a="tog">${reorg?'':`<span class="chev">${o?'▾':'▸'}</span>`}<span class="dot" style="background:${COL[i%COL.length]}"></span><div class="tt">${hdTxt(s,i)}</div>${chip(s)}${reorg?'<button class="ic" data-a="up" aria-label="Monter">▲</button><button class="ic" data-a="down" aria-label="Descendre">▼</button>':''}${(o||reorg)?'<button class="ic" data-a="del" aria-label="Supprimer ce jour" title="Supprimer ce jour">🗑</button>':''}</div>${o?body(s):''}</div>`}).join('');
+ $('#list').innerHTML=(reorg?'':transCard('out'))+(cards||'<p class="meta">Aucun jour. Ajoutes-en un pour commencer.</p>')+(reorg?'':transCard('back'));
 }
 $('#list').addEventListener('input',e=>{
- const c=e.target.closest('.card'),f=e.target.dataset.f,l=e.target.dataset.l;if(!c||!(f||l))return;
+ const tr=e.target.closest('.card.tr');if(tr)return transInput(e,tr);
+ const c=e.target.closest('.card[data-id]'),f=e.target.dataset.f,l=e.target.dataset.l,lf=e.target.dataset.lfor;
+ if(!c||!(f||l||lf!==undefined))return;
  const s=D.stages.find(x=>x.id===c.dataset.id);
+ if(lf!==undefined){
+  const L=s.lodging=s.lodging||{name:'',address:'',price:'',status:'find',nights:1};
+  const names=[...c.querySelectorAll('[data-lfor]')].filter(x=>x.checked).map(x=>x.dataset.lfor);
+  L.for=names.length===D.participants.length?[]:names;changed();return;
+ }
  if(l){const L=s.lodging=s.lodging||{name:'',address:'',price:'',status:'find',nights:1};L[l]=e.target.value;changed();renderSum();c.querySelectorAll('.chip').forEach(el=>el.outerHTML=chip(s,!!el.dataset.bed));return}
- s[f]=e.target.value;if(f==='name')s.auto=false;changed();
+ s[f]=e.target.value;
+ if(f==='name'){s.auto=!e.target.value.trim();if(s.auto)s.geoKey=null}
+ changed();
  const h=c.querySelector('.hd .tt');if(h)h.innerHTML=hdTxt(s,D.stages.indexOf(s));
  if(f==='date'){renderSum();delete WX[s.id];if(openC.has('w'+s.id))loadWx(s)}
 });
@@ -521,36 +595,33 @@ function renderLodg(){
  el.innerHTML=h;
 }
 function goStage(id){
- sel=id;openS.add(id);document.querySelector('.tabs [data-t=stages]').click();renderList();drawMap();
+ sel=id;openS.add(id);reorg=false;document.querySelector('.tabs [data-t=stages]').click();renderList();drawMap();
  const c=document.querySelector('.card[data-id="'+id+'"]');if(c)c.scrollIntoView({block:'nearest'});
 }
 $('#p-lodg').addEventListener('click',e=>{const tr=e.target.closest('tr[data-id]');if(tr)goStage(tr.dataset.id)});
 $('#list').addEventListener('click',e=>{
- const c=e.target.closest('.card');if(!c)return;
+ const tc=e.target.closest('.card.tr');if(tc)return transClick(e,tc);
+ const c=e.target.closest('.card[data-id]');if(!c)return;
  const ae=e.target.closest('[data-a]'),a=ae&&ae.dataset.a;
  const id=c.dataset.id,i=D.stages.findIndex(s=>s.id===id);
- if(!a){if(sel!==id){sel=id;document.querySelectorAll('.card').forEach(x=>x.classList.toggle('on',x.dataset.id===id));if(view==='day')drawMap(true)}return}
+ if(!a){if(sel!==id){sel=id;document.querySelectorAll('.card[data-id]').forEach(x=>x.classList.toggle('on',x.dataset.id===id));if(view==='day')drawMap(true);else drawMap()}return}
  sel=id;
- if(a==='tog'){openS.has(id)?openS.delete(id):openS.add(id);renderList();if(view==='day')drawMap(true);return}
- if(a==='view'){view='day';drawMap(true)}
+ if(a==='tog'){if(!reorg){openS.has(id)?openS.delete(id):openS.add(id)}renderList();if(view==='day')drawMap(true);else drawMap();return}
  if(a==='csend'){stageSend(D.stages[i],c);return}
- if(a==='elev'){elevStage(D.stages[i]);return}
  if(a==='wx'){loadWx(D.stages[i]);return}
- if(a==='route'){routeStage(D.stages[i]);return}
- if(a==='auto'){D.stages[i].auto=true;D.stages[i].geoKey=null;scheduleNames();toast('Nom calculé à partir des repères…');return}
  if(a==='up'&&i>0){[D.stages[i-1],D.stages[i]]=[D.stages[i],D.stages[i-1]];changed()}
  if(a==='down'&&i<D.stages.length-1){[D.stages[i+1],D.stages[i]]=[D.stages[i],D.stages[i+1]];changed()}
  if(a==='del'&&confirm('Supprimer ce jour et son tracé ?')){D.stages.splice(i,1);sel=D.stages[0]&&D.stages[0].id;changed()}
  renderList();drawMap();
 });
-$('#bexp').onclick=()=>{D.stages.forEach(s=>openS.add(s.id));renderList()};
-$('#bcol').onclick=()=>{openS.clear();renderList()};
+$('#bexp').onclick=()=>{reorg=false;$('#breorg').classList.remove('on');D.stages.forEach(s=>openS.add(s.id));openT.add('dout');openT.add('dback');renderList()};
+$('#bcol').onclick=()=>{reorg=false;$('#breorg').classList.remove('on');openS.clear();openT.delete('dout');openT.delete('dback');renderList()};
+$('#breorg').onclick=()=>{reorg=!reorg;$('#breorg').classList.toggle('on',reorg);renderList()};
 $('#badd').onclick=()=>{
  const last=D.stages.length?D.stages[D.stages.length-1].date:'';
  const s={id:'s'+Date.now().toString(36),name:'Jour '+(D.stages.length+1),auto:true,date:last?addD(last,1):(D.start||''),notes:'',lodging:{name:'',address:'',price:'',status:'find',nights:1},points:[]};
- D.stages.push(s);sel=s.id;openS.add(s.id);changed();renderList();drawMap();
+ D.stages.push(s);sel=s.id;openS.add(s.id);reorg=false;changed();renderList();drawMap();
 };
-
 async function stageSend(s,c){
  const inp=c.querySelector('.cin'),t=inp.value.trim();if(!t)return;
  (s.chat=s.chat||[]).push({id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),author:C.me,text:t,ts:Date.now()});
@@ -582,21 +653,24 @@ async function send(){
 $('#msend').onclick=send;
 $('#mtxt').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
 async function refresh(manual){
- if(!curId)return refreshIdx(manual);
  if(!hasGh())return manual&&toast('Token GitHub requis pour actualiser.');
  if(dirty&&!manual)return;
  try{
-  const r=await ghGet(tpath());
-  if(r.sha===sha)return manual&&toast('Déjà à jour.');
-  if(dirty){mergeMsgs(r.data);sha=r.sha;toast('Messages récupérés, tes modifications restent à enregistrer.')}
-  else{D=r.data;sha=r.sha;norm();if(!D.stages.find(s=>s.id===sel))sel=D.stages[0]&&D.stages[0].id;renderAll(false)}
-  renderChat();
- }catch(e){manual&&toast('Actualisation impossible (erreur '+e.message+').')}
+  const r=await ghGet(C.path);
+  if(r.sha===allSha)return manual&&toast('Déjà à jour.');
+  const rem=wrap(r.data);
+  if(dirty){mergeAll(rem);allSha=r.sha;toast('Modifications des autres récupérées ; les tiennes restent à enregistrer.')}
+  else{
+   ALL=rem;ALL.trips.forEach(t=>norm(t));allSha=r.sha;
+   if(curId){const t=ALL.trips.find(x=>x.id===curId);if(!t){location.hash='';return}D=t}
+  }
+  if(curId)renderAll(false);else renderHome();
+ }catch(e){manual&&toast('Actualisation impossible ('+em(e)+').')}
 }
 $('#bref').onclick=()=>refresh(true);
 setInterval(()=>refresh(false),60000);
 
-/* ---------- Trajets (aller / retour) ---------- */
+/* ---------- Trajets : pré-étape (aller) et post-étape (retour) ---------- */
 const openT=new Set();
 const MODES={train:['🚆','Train'],car:['🚗','Voiture'],plane:['✈️','Avion'],bus:['🚌','Bus'],other:['🧭','Autre']};
 const chipT=t=>{const x=LS[t.status]||LS.find;return `<span class="chip ${x[2]}">${x[0]} ${x[1]}</span>`};
@@ -604,6 +678,50 @@ const whoLb=w=>w==='*'?'Tous':w;
 const fmtDT=v=>v?new Date(v).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'?';
 const autoPlace=(s,last)=>{if(!s||!s.auto)return'';const a=String(s.name).split(/ - | → /);return a.length>1?(last?a[a.length-1]:a[0]):''};
 const legHd=t=>`<b>${(MODES[t.mode]||MODES.other)[0]} ${esc(whoLb(t.who))} · ${esc(t.from||'?')} → ${esc(t.to||'?')}</b><span class="meta">${fmtDT(t.dep)} → ${fmtDT(t.arr)}${t.price?' · '+esc(t.price)+' €':''}</span>`;
+const legsOf=dir=>D.transports.filter(t=>t.dir===dir).sort((a,b)=>(a.dep||'9').localeCompare(b.dep||'9'));
+const ST_ORDER=['find','todo','booked','paid'];
+function trSummary(dir){
+ const L=legsOf(dir),title=dir==='out'?'Aller · avant J1':'Retour · après J'+Math.max(1,D.stages.length);
+ if(!L.length)return{html:`<b>🧳 ${title}</b><span class="meta">Aucun trajet prévu</span>`,chip:'<span class="chip warn">⚠ À prévoir</span>'};
+ const icons=[...new Set(L.map(t=>(MODES[t.mode]||MODES.other)[0]))].join(''),first=L[0],last=L[L.length-1];
+ const pr=L.reduce((a,t)=>a+(+t.price||0),0),worst=Math.min(...L.map(t=>Math.max(0,ST_ORDER.indexOf(t.status)))),x=LS[ST_ORDER[worst]];
+ return{html:`<b>${icons} ${title} · ${esc(first.from||'?')} → ${esc(last.to||'?')}</b><span class="meta">${fmtDT(first.dep)} → ${fmtDT(last.arr)}${L.length>1?' · '+L.length+' trajets':''}${pr?' · '+pr+' €':''}</span>`,chip:`<span class="chip ${x[2]}">${x[0]} ${x[1]}</span>`};
+}
+const legHtml=t=>{const o=openT.has('l'+t.id);return `<div class="leg" data-lid="${t.id}"><div class="hd lhd" data-a="ltog"><span class="chev">${o?'▾':'▸'}</span><div class="tt">${legHd(t)}</div>${chipT(t)}${o?'<button class="ic" data-a="ldel" aria-label="Supprimer ce trajet" title="Supprimer ce trajet">🗑</button>':''}</div>`+(o?`<div class="bd">
+ <div class="row"><select data-tf="who">${['*',...D.participants].map(w=>`<option value="${esc(w)}" ${t.who===w?'selected':''}>${esc(whoLb(w))}</option>`).join('')}</select><select data-tf="mode">${Object.entries(MODES).map(([k,v])=>`<option value="${k}" ${t.mode===k?'selected':''}>${v[0]} ${v[1]}</option>`).join('')}</select></div>
+ <div class="row"><input data-tf="from" placeholder="Départ" value="${esc(t.from)}"><input data-tf="to" placeholder="Arrivée" value="${esc(t.to)}"></div>
+ <div class="row"><input type="datetime-local" data-tf="dep" title="Départ" value="${esc(t.dep)}"><input type="datetime-local" data-tf="arr" title="Arrivée" value="${esc(t.arr)}"></div>
+ <input data-tf="ref" placeholder="N° de train / vol, réservation…" value="${esc(t.ref)}">
+ <div class="row"><input type="number" min="0" step="1" data-tf="price" placeholder="Prix total (€)" value="${esc(t.price)}"><select data-tf="payer"><option value="">Payé par ?</option>${D.participants.map(p=>`<option value="${esc(p)}" ${t.payer===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
+ <select data-tf="status">${Object.entries(LS).filter(([k])=>k!=='na').map(([k,v])=>`<option value="${k}" ${t.status===k?'selected':''}>${v[1]}</option>`).join('')}</select>
+ <textarea data-tf="notes" rows="2" placeholder="Notes : correspondances, parking, bagages…">${esc(t.notes)}</textarea></div>`:'')+'</div>'};
+function transCard(dir){
+ const o=openT.has('d'+dir),sm=trSummary(dir);
+ return `<div class="card tr" data-dir="${dir}"><div class="hd thd" data-a="ttog"><span class="chev">${o?'▾':'▸'}</span><div class="tt">${sm.html}</div>${sm.chip}</div>`+(o?`<div class="bd">${legsOf(dir).map(legHtml).join('')}<div class="row"><button data-a="tadd">+ Ajouter un trajet</button></div></div>`:'')+'</div>';
+}
+function transClick(e,c){
+ const ae=e.target.closest('[data-a]');if(!ae)return;
+ const a=ae.dataset.a,dir=c.dataset.dir,lg=e.target.closest('.leg'),id=lg&&lg.dataset.lid;
+ if(a==='ttog'){const k='d'+dir;openT.has(k)?openT.delete(k):openT.add(k);renderList();return}
+ if(a==='tadd'){
+  const me=D.participants.includes(C.me)?C.me:'*';
+  const t={id:'t'+Date.now().toString(36),dir,who:me,mode:'train',from:'',to:'',dep:'',arr:'',ref:'',price:'',payer:'',status:'find',notes:''};
+  if(dir==='out')t.to=autoPlace(D.stages[0],false);else t.from=autoPlace(D.stages[D.stages.length-1],true);
+  D.transports.push(t);openT.add('d'+dir);openT.add('l'+t.id);changed();renderList();schedGeo();return;
+ }
+ if(a==='ltog'){const k='l'+id;openT.has(k)?openT.delete(k):openT.add(k);renderList();return}
+ if(a==='ldel'&&confirm('Supprimer ce trajet ?')){D.transports=D.transports.filter(t=>t.id!==id);changed();renderList();schedGeo()}
+}
+function transInput(e,c){
+ const f=e.target.dataset.tf,lg=e.target.closest('.leg');if(!f||!lg)return;
+ const t=D.transports.find(x=>x.id===lg.dataset.lid);if(!t)return;
+ t[f]=e.target.value;changed();
+ lg.querySelector('.lhd .tt').innerHTML=legHd(t);
+ const ch=lg.querySelector('.lhd .chip');if(ch)ch.outerHTML=chipT(t);
+ const sm=trSummary(c.dataset.dir);c.querySelector('.thd .tt').innerHTML=sm.html;
+ const cc=c.querySelector('.thd .chip');if(cc)cc.outerHTML=sm.chip;
+ schedGeo();
+}
 function transCheck(){
  const J1=(D.stages[0]&&D.stages[0].date)||D.start,JN=(D.stages.length&&D.stages[D.stages.length-1].date)||D.end,msg=[];
  D.participants.forEach(p=>{
@@ -615,43 +733,73 @@ function transCheck(){
  });
  return msg;
 }
-const legCard=t=>{const o=openT.has(t.id);return `<div class="card" data-id="${t.id}"><div class="hd" data-a="tog"><span class="chev">${o?'▾':'▸'}</span><div class="tt">${legHd(t)}</div>${chipT(t)}</div>`+(o?`<div class="bd">
- <div class="row"><select data-f="who">${['*',...D.participants].map(w=>`<option value="${esc(w)}" ${t.who===w?'selected':''}>${esc(whoLb(w))}</option>`).join('')}</select><select data-f="mode">${Object.entries(MODES).map(([k,v])=>`<option value="${k}" ${t.mode===k?'selected':''}>${v[0]} ${v[1]}</option>`).join('')}</select></div>
- <div class="row"><input data-f="from" placeholder="Départ" value="${esc(t.from)}"><input data-f="to" placeholder="Arrivée" value="${esc(t.to)}"></div>
- <div class="row"><input type="datetime-local" data-f="dep" title="Départ" value="${esc(t.dep)}"><input type="datetime-local" data-f="arr" title="Arrivée" value="${esc(t.arr)}"></div>
- <input data-f="ref" placeholder="N° de train / vol, réservation…" value="${esc(t.ref)}">
- <div class="row"><input type="number" min="0" step="1" data-f="price" placeholder="Prix total (€)" value="${esc(t.price)}"><select data-f="status">${Object.entries(LS).filter(([k])=>k!=='na').map(([k,v])=>`<option value="${k}" ${t.status===k?'selected':''}>${v[1]}</option>`).join('')}</select></div>
- <textarea data-f="notes" rows="2" placeholder="Notes : correspondances, parking, bagages…">${esc(t.notes)}</textarea>
- <div class="row"><button data-a="del" class="danger">Supprimer</button></div></div>`:'')+'</div>'};
-function renderTrans(){
- const el=$('#p-trans');if(!el||el.hidden)return;
- const T=D.transports=D.transports||[],msg=transCheck();
- const sec=(dir,title)=>{
-  const L=T.filter(t=>t.dir===dir).sort((a,b)=>(a.dep||'9').localeCompare(b.dep||'9')),pr=L.reduce((a,t)=>a+(+t.price||0),0);
-  return `<div class="sec"><span>${title}${pr?' · '+pr+' €':''}</span><button data-a="add" data-dir="${dir}">+ Trajet</button></div>`+(L.map(legCard).join('')||'<p class="meta">Aucun trajet.</p>');
- };
- el.innerHTML=(msg.length?msg.map(m=>`<p><span class="chip warn">⚠ ${esc(m)}</span></p>`).join(''):'<p><span class="chip ok">✅ Aller et retour prévus pour chaque participant</span></p>')+sec('out','Aller · domicile → départ J1')+sec('back','Retour · arrivée → domicile');
+/* ---------- Budget et remboursements ---------- */
+const eur=n=>n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+function expenses(){
+ const E=[],P=D.participants;
+ D.stages.forEach((s,i)=>{const L=lodgOf(s),a=+L.price;if(L.status==='na'||!(a>0))return;E.push({label:'J'+(i+1)+' · 🛏 '+(L.name||'Hébergement'),amt:a,payer:L.payer||'',who:forList(L)})});
+ D.transports.forEach(t=>{const a=+t.price;if(!(a>0))return;E.push({label:(t.dir==='out'?'Aller':'Retour')+' · '+(MODES[t.mode]||MODES.other)[0]+' '+(t.from||'?')+' → '+(t.to||'?'),amt:a,payer:t.payer||'',who:(t.who==='*'||!P.includes(t.who))?P:[t.who]})});
+ return E;
 }
-$('#p-trans').addEventListener('click',e=>{
- const ae=e.target.closest('[data-a]');if(!ae)return;
- const a=ae.dataset.a,c=e.target.closest('.card'),id=c&&c.dataset.id;
- if(a==='add'){
-  const dir=ae.dataset.dir,me=D.participants.includes(C.me)?C.me:'*',home=(D.homes&&D.homes[me])||'';
-  const t={id:'t'+Date.now().toString(36),dir,who:me,mode:'train',from:'',to:'',dep:'',arr:'',ref:'',price:'',status:'find',notes:''};
-  if(dir==='out'){t.from=home;t.to=autoPlace(D.stages[0],false)}else{t.from=autoPlace(D.stages[D.stages.length-1],true);t.to=home}
-  D.transports.push(t);openT.add(t.id);changed();renderTrans();schedGeo();return;
+function settle(E){
+ const bal={};D.participants.forEach(p=>bal[p]={paid:0,owed:0});let un=0;
+ E.forEach(e=>{if(!e.payer||!bal[e.payer]){un+=e.amt;return}bal[e.payer].paid+=e.amt;e.who.forEach(w=>{if(bal[w])bal[w].owed+=e.amt/e.who.length})});
+ const cr=[],db=[],r2=x=>Math.round(x*100)/100;
+ Object.entries(bal).forEach(([p,b])=>{const n=r2(b.paid-b.owed);if(n>0)cr.push([p,n]);else if(n<0)db.push([p,-n])});
+ cr.sort((a,b)=>b[1]-a[1]);db.sort((a,b)=>b[1]-a[1]);
+ const tr=[];let i=0,j=0;
+ while(i<db.length&&j<cr.length){const x=r2(Math.min(db[i][1],cr[j][1]));tr.push({from:db[i][0],to:cr[j][0],amt:x});db[i][1]=r2(db[i][1]-x);cr[j][1]=r2(cr[j][1]-x);if(db[i][1]<=0)i++;if(cr[j][1]<=0)j++}
+ return{bal,tr,un};
+}
+function budgetHtml(){
+ const E=expenses();if(!E.length)return '<div class="sec"><span>Budget</span></div><p class="meta">Aucun prix renseigné (hébergements ou trajets).</p>';
+ const {bal,tr,un}=settle(E),tot=E.reduce((a,e)=>a+e.amt,0);
+ let h=`<div class="sec"><span>Budget · ${eur(tot)}</span></div><table class="rc"><tr><th>Participant</th><th>A payé</th><th>Sa part</th><th>Solde</th></tr>`+D.participants.map(p=>{const b=bal[p],n=b.paid-b.owed;return `<tr><td>${esc(p)}</td><td>${eur(b.paid)}</td><td>${eur(b.owed)}</td><td style="color:${n>=0?'var(--sea)':'var(--bad)'}">${n>0?'+':''}${eur(n)}</td></tr>`}).join('')+'</table>';
+ h+='<div class="sec"><span>Remboursements</span></div>'+(tr.length?tr.map(t=>`<p>💸 <b>${esc(t.from)}</b> doit <b>${eur(t.amt)}</b> à <b>${esc(t.to)}</b></p>`).join(''):'<p class="meta">Rien à rembourser.</p>');
+ if(un>0)h+=`<p><span class="chip warn">⚠ ${eur(un)} sans payeur défini (non comptés)</span></p>`;
+ h+='<details><summary>Détail des dépenses</summary><table class="rc">'+E.map(e=>`<tr><td>${esc(e.label)}</td><td>${eur(e.amt)}</td><td class="meta">${e.payer?esc(e.payer):'⚠ payeur ?'} → ${esc(e.who.join(', '))}</td></tr>`).join('')+'</table></details>';
+ return h;
+}
+/* ---------- Récap du voyage ---------- */
+function profAll(){
+ const parts=D.stages.map((s,i)=>({s,i})).filter(x=>x.s.elev&&x.s.elev.d&&x.s.elev.d.length>1);
+ if(!parts.length)return'';
+ let off=0,lo=1e9,hi=-1e9;const seg=[];
+ parts.forEach(({s,i})=>{const e=s.elev,dm=e.d[e.d.length-1]||0.01;seg.push({i,off,dm,e});off+=dm;lo=Math.min(lo,e.min);hi=Math.max(hi,e.max)});
+ const W=320,H=120,P=6,B=16,X=d=>P+(W-2*P)*d/off,Y=z=>H-B-(H-B-P)*(z-lo)/Math.max(10,hi-lo);
+ const g=seg.map(sg=>{
+  const pts=sg.e.d.map((d,k)=>X(sg.off+d).toFixed(1)+','+Y(sg.e.z[k]).toFixed(1)).join(' '),col=COL[sg.i%COL.length];
+  const x0=X(sg.off),x1=X(sg.off+sg.dm);
+  return `<polygon points="${x0.toFixed(1)},${H-B} ${pts} ${x1.toFixed(1)},${H-B}" fill="${col}" opacity=".35"/><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6"/><line x1="${x0.toFixed(1)}" x2="${x0.toFixed(1)}" y1="${P}" y2="${H-B}" stroke="var(--line)" stroke-dasharray="3 3"/><text x="${((x0+x1)/2).toFixed(1)}" y="${H-3}" text-anchor="middle" font-size="9" fill="var(--mute)">J${sg.i+1}</text>`}).join('');
+ return `<div class="sec"><span>Profil du parcours</span></div><svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Profil altimétrique total">${g}</svg><div class="meta" style="display:flex;justify-content:space-between"><span>min ${Math.round(lo)} m</span><span>${off.toFixed(1)} km</span><span>max ${Math.round(hi)} m</span></div>`;
+}
+function checksHtml(){
+ const m=[],ns=nightsList();
+ if(ns.length){const cm=coverMap(),miss=ns.filter(d=>!cm[d]).length;if(miss)m.push(miss+' nuit(s) sans hébergement')}
+ m.push(...transCheck());
+ const np=expenses().filter(e=>!e.payer).length;if(np)m.push(np+' dépense(s) sans payeur défini');
+ return m.length?'<div class="sec"><span>À vérifier</span></div>'+m.map(x=>`<p><span class="chip warn">⚠ ${esc(x)}</span></p>`).join(''):'<p><span class="chip ok">✅ Rien à signaler</span></p>';
+}
+function renderRecap(){
+ const el=$('#p-recap');if(!el||el.hidden)return;
+ const A=D.stages.map((s,i)=>({s,i,km:s.points.length>1?dist(s):0})).filter(x=>x.km>0);
+ let h=checksHtml();
+ if(!A.length)h+='<p class="meta">Trace des jours sur la carte pour voir les statistiques.</p>';
+ else{
+  const tot=A.reduce((a,x)=>a+x.km,0),E=A.filter(x=>x.s.elev&&x.s.elev.z&&x.s.elev.z.length);
+  const lg=A.reduce((a,x)=>x.km>a.km?x:a),sh=A.reduce((a,x)=>x.km<a.km?x:a);
+  const T=(l,v)=>`<div class="stat"><span class="meta">${l}</span><b>${v}</b></div>`;
+  let t=T('Jours',D.stages.length)+(D.start&&D.end?T('Période',fmtD(D.start)+' → '+fmtD(D.end)):'')+T('Distance totale',tot.toFixed(1)+' km')+T('Moyenne / jour',(tot/A.length).toFixed(1)+' km')+T('Jour le plus long','J'+(lg.i+1)+' · '+lg.km.toFixed(1)+' km')+T('Jour le plus court','J'+(sh.i+1)+' · '+sh.km.toFixed(1)+' km');
+  if(E.length){
+   const up=E.reduce((a,x)=>a+x.s.elev.up,0),dn=E.reduce((a,x)=>a+x.s.elev.dn,0),hd=E.reduce((a,x)=>x.s.elev.up>a.s.elev.up?x:a);
+   t+=T('Dénivelé +',up+' m')+T('Dénivelé −',dn+' m')+T('Altitude max',Math.max(...E.map(x=>x.s.elev.max))+' m')+T('Altitude min',Math.min(...E.map(x=>x.s.elev.min))+' m')+T('D+ moyen / jour',Math.round(up/E.length)+' m')+T('Jour le plus dur','J'+(hd.i+1)+' · +'+hd.s.elev.up+' m');
+  }
+  h+='<div class="sec"><span>Statistiques</span></div><div class="stats">'+t+'</div>';
+  if(E.length<A.length)h+=`<p class="meta">Dénivelé calculé pour ${E.length} jour(s) sur ${A.length}.</p>`;
  }
- if(a==='tog'){openT.has(id)?openT.delete(id):openT.add(id);renderTrans();return}
- if(a==='del'&&confirm('Supprimer ce trajet ?')){D.transports=D.transports.filter(t=>t.id!==id);changed();renderTrans();schedGeo()}
-});
-$('#p-trans').addEventListener('input',e=>{
- const c=e.target.closest('.card'),f=e.target.dataset.f;if(!c||!f)return;
- const t=D.transports.find(x=>x.id===c.dataset.id);if(!t)return;
- t[f]=e.target.value;changed();
- c.querySelector('.hd .tt').innerHTML=legHd(t);
- const ch=c.querySelector('.hd .chip');if(ch)ch.outerHTML=chipT(t);schedGeo();
-});
-$('#t-homes').addEventListener('input',e=>{const n=e.target.dataset.home;if(n===undefined)return;(D.homes=D.homes||{})[n]=e.target.value;changed()});
+ h+=profAll()+budgetHtml();
+ el.innerHTML=h;
+}
 /* ---------- Trajets sur la carte (à vol d’oiseau) ---------- */
 const trLayer=L.layerGroup().addTo(map);
 let trOn=localStorage.getItem('tp_tr')==='1',geoBusy=false,gt2;
@@ -689,7 +837,7 @@ async function geoTrans(fit){
     const q=(t[k]||'').trim();
     if(!q){t[k+'LL']=null;t[k+'Q']='';continue}
     if(t[k+'Q']===q)continue;
-    t[k+'LL']=await geocode(q);t[k+'Q']=q;dirty=true;status('● Non enregistré');
+    t[k+'LL']=await geocode(q);t[k+'Q']=q;markDirty();
     drawTrans();await sleep(1100);
    }
   }
@@ -706,16 +854,22 @@ function setTr(v){
 }
 $('#btr').onclick=()=>setTr(!trOn);
 /* ---------- Accueil & navigation ---------- */
-const hue=id=>{let h=0;for(const c of id)h=(h*31+c.charCodeAt(0))%360;return h};
+const hue=id=>{let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))%360;return h};
 const fmtY=d=>new Date(d+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
 function tripStatus(m){const t=iso(new Date());if(!m.start||!m.end)return['Dates à définir','na'];if(t<m.start)return['À venir','ok'];if(t>m.end)return['Terminé','na'];return['En cours','warn']}
 function renderHome(){
- $('#hmsg').innerHTML=hasGh()?'':'<p class="meta" style="padding:0 14px">Lecture seule : renseigne le token (⚙) pour créer et modifier des voyages.</p>';
- const ts=[...IDX.trips].sort((a,b)=>(b.start||'9999').localeCompare(a.start||'9999'));
- $('#cards').innerHTML=ts.map(m=>{const [lb,cl]=tripStatus(m);return `<div class="tc" data-id="${esc(m.id)}"><button class="x" data-del="${esc(m.id)}" aria-label="Supprimer ce voyage" title="Supprimer ce voyage">✕</button><div class="band" style="background:hsl(${hue(m.id)} 55% 45%)"></div><div class="tb"><b>${esc(m.name||'Sans nom')}</b>
+ $('#hmsg').innerHTML=(loadErr?`<p style="padding:0 14px"><span class="chip warn">⚠ ${esc(loadErr)}</span></p>`:'')+(hasGh()?'':'<p class="meta" style="padding:0 14px">Lecture seule : renseigne le token (⚙) pour créer et modifier des voyages.</p>');
+ const km=t=>Math.round((t.stages||[]).reduce((a,s)=>a+((s.points&&s.points.length>1)?dist(s):0),0));
+ const ts=[...ALL.trips].sort((a,b)=>(b.start||'9999').localeCompare(a.start||'9999'));
+ $('#cards').innerHTML=ts.map(m=>{const [lb,cl]=tripStatus(m),k=km(m),h=hue(m.id);return `<div class="tc" data-id="${esc(m.id)}"><button class="x" data-del="${esc(m.id)}" aria-label="Supprimer ce voyage" title="Supprimer ce voyage">🗑</button>${m.cover?`<img class="cv" alt="" src="${esc(m.cover)}">`:`<div class="band" style="background:linear-gradient(135deg,hsl(${h} 55% 45%),hsl(${(h+40)%360} 55% 32%))">🥾</div>`}<div class="tb"><b>${esc(m.title||'Sans nom')}</b>
   <div class="meta">${m.start?fmtY(m.start)+(m.end?' → '+fmtY(m.end):''):'Dates à définir'}</div>
-  <div class="meta">${m.days||0} jour(s)${m.km?' · '+m.km+' km':''}</div>
-  <div class="meta">👥 ${esc((m.participants||[]).join(', '))}</div><div><span class="chip ${cl}">${lb}</span></div>${bad[m.id]?`<div><span class="chip warn">⚠ ${esc(bad[m.id])}</span></div>`:''}</div></div>`}).join('')+'<div class="tc new" id="tnew"><div class="tb"><b>＋ Nouveau voyage</b></div></div>';
+  <div class="meta">${(m.stages||[]).length} jour(s)${k?' · '+k+' km':''}</div>
+  <div class="meta">👥 ${esc((m.participants||[]).join(', '))}</div><div><span class="chip ${cl}">${lb}</span></div></div></div>`}).join('')+'<div class="tc new" id="tnew"><div class="tb"><b>＋ Nouveau voyage</b></div></div>';
+}
+function pickTrip(){
+ const t=iso(new Date()),T=ALL.trips.filter(x=>x.start);
+ const run=T.filter(x=>x.start<=t&&(x.end||x.start)>=t).sort((a,b)=>a.start.localeCompare(b.start))[0];
+ return run||T.filter(x=>x.start>t).sort((a,b)=>a.start.localeCompare(b.start))[0];
 }
 $('#cards').addEventListener('click',e=>{
  const dx=e.target.closest('[data-del]');if(dx){e.stopPropagation();return delTripById(dx.dataset.del)}
@@ -726,79 +880,60 @@ async function newTrip(){
  if(!hasGh()){toast('Renseigne le token (⚙) pour créer un voyage.');return openSet()}
  const name=(prompt('Nom du voyage ?')||'').trim();if(!name)return;
  const id='v'+Date.now().toString(36);
- newData[id]={title:name,start:'',end:'',participants:[C.me||'Moi'],stages:[],messages:[]};
- IDX.trips.push(metaOf(newData[id],id));idxDirty=true;
+ ALL.trips.push({id,title:name,start:'',end:'',participants:[C.me||'Moi'],homes:{},stages:[],messages:[],transports:[]});
+ createdLocal.add(id);touched.add(id);dirty=true;
  location.hash='#t='+id;
+ await save();
 }
 function showHome(){
- if(curId)upsertMeta();openT.clear();
- curId=null;D=structuredClone(DEF);dirty=false;
+ curId=null;D=structuredClone(DEF);openT.clear();
  $('#trip').hidden=true;$('#home').hidden=false;document.title='Mes voyages';renderHome();
 }
-const bad={},em=e=>e instanceof SyntaxError?'fichier illisible':(e&&e.message==='404'?'introuvable':(e&&e.message?e.message:String(e)));
-async function openTrip(id){
- const m=IDX.trips.find(t=>t.id===id);
- if(!m){toast('Voyage introuvable.');location.hash='';return}
- curId=id;sha=null;dirty=false;let fresh=false;
- if(newData[id]){D=newData[id];delete newData[id];fresh=true}
- else{
-  let ok=false,err='';
-  if(hasGh()){try{const r=await ghGet(tpath());D=r.data;sha=r.sha;ok=true}catch(e){err='GitHub '+em(e)}}
-  if(!ok){try{const r=await fetch(tpath()+'?t='+Date.now());if(!r.ok)throw new Error(r.status);D=await r.json();ok=true}catch(e){err+=(err?' · ':'')+'Pages '+em(e)}}
-  if(!ok){bad[id]=err;toast('Impossible d’ouvrir « '+(m.name||id)+' » ('+err+'). Tu peux le retirer avec ✕.');curId=null;location.hash='';return}
- }
- delete bad[id];
- if(!D||typeof D!=='object')D=structuredClone(DEF);
- try{norm()}catch(e){toast('Données abîmées : '+em(e))}
- openS.clear();openC.clear();sel=D.stages[0]&&D.stages[0].id;view='all';draw=false;
+function openTrip(id){
+ const t=ALL.trips.find(x=>x.id===id);
+ if(!t){toast('Voyage introuvable.');location.hash='';return}
+ curId=id;D=t;norm(D);
+ openS.clear();openC.clear();openT.clear();sel=D.stages[0]&&D.stages[0].id;view='all';draw=false;
  $('#home').hidden=true;$('#trip').hidden=false;map.invalidateSize();renderAll(true);
- status(hasGh()?'':'Lecture seule : token à régler (⚙)');
- if(fresh){dirty=true;await save()}
+ status(hasGh()?(dirty?'● Non enregistré':''):'Lecture seule : token à régler (⚙)');
+ autoFill();
 }
 async function route(){
  const m=location.hash.match(/^#t=([\w-]+)$/);
- if(curId&&(!m||m[1]!==curId)&&dirty&&hasGh())await save();
+ if(curId&&(!m||m[1]!==curId)&&dirty&&hasGh()&&loaded)await save();
  if(!m)return showHome();
- await openTrip(m[1]);
+ openTrip(m[1]);
 }
 addEventListener('hashchange',route);
 $('#bback').onclick=async()=>{
  if(dirty){if(hasGh())await save();else if(!confirm('Quitter sans enregistrer ?'))return}
  location.hash='';
 };
-async function refreshIdx(manual){
- if(!hasGh())return manual&&toast('Token GitHub requis pour actualiser.');
- try{const r=await ghGet(idxPath());if(r.sha!==idxSha&&!idxDirty){IDX=r.data;IDX.trips=IDX.trips||[];idxSha=r.sha;renderHome()}else if(manual)toast('Déjà à jour.')}catch(e){manual&&toast('Actualisation impossible.')}
-}
-$('#bhref').onclick=()=>refreshIdx(true);
+$('#bhref').onclick=()=>refresh(true);
 async function delTripById(id){
- const m=IDX.trips.find(t=>t.id===id);if(!m)return;
- if(!hasGh())return toast('Token GitHub requis pour supprimer.');
- if(!confirm('Supprimer « '+(m.name||'ce voyage')+' » pour tous les participants ? Son fichier sera supprimé du dépôt.'))return;
- const p=m.file||C.dir+'/'+id+'.json';
- try{
-  try{await ghDel(p,await ghSha(p))}catch(e){if(e.message!=='404')throw e}
-  deleted.add(id);IDX.trips=IDX.trips.filter(t=>t.id!==id);delete bad[id];
-  if(curId===id){curId=null;dirty=false}
-  await saveIndex();
-  if(location.hash)location.hash='';else renderHome();
- }catch(e){toast('Suppression impossible (erreur '+em(e)+').')}
+ const t=ALL.trips.find(x=>x.id===id);if(!t)return;
+ if(!hasGh()||!loaded)return toast('Token GitHub requis (et fichier lisible) pour supprimer.');
+ if(!confirm('Supprimer « '+(t.title||'ce voyage')+' » pour tous les participants ?'))return;
+ deleted.add(id);ALL.trips=ALL.trips.filter(x=>x.id!==id);touched.delete(id);dirty=true;
+ if(curId===id)curId=null;
+ await save();
+ if(location.hash)location.hash='';else renderHome();
 }
 $('#t-del').onclick=()=>delTripById(curId);
 /* ---------- Réglages & onglets ---------- */
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
- ['stages','lodg','trans','chat','trip'].forEach(t=>$('#p-'+t).hidden=b.dataset.t!==t);renderLodg();renderTrans();renderTrip();
+ ['stages','lodg','recap','chat','trip'].forEach(t=>$('#p-'+t).hidden=b.dataset.t!==t);renderLodg();renderRecap();renderTrip();
 });
 function openSet(){
  $('#c-for').value='';$('#c-url').value='';$('#c-me').value=C.me||'';
- ['owner','repo','branch','path','dir','token'].forEach(k=>$('#c-'+k).value=C[k]||'');
+ ['owner','repo','branch','path','token'].forEach(k=>$('#c-'+k).value=C[k]||'');
  $('#dlg').showModal();
 }
 $('#bset2').onclick=openSet;
 $('#bset').onclick=openSet;
 $('#c-link').onclick=async()=>{
- const o={owner:$('#c-owner').value.trim(),repo:$('#c-repo').value.trim(),branch:$('#c-branch').value.trim()||'main',path:$('#c-path').value.trim()||'data.json',dir:$('#c-dir').value.trim()||'data',token:$('#c-token').value.trim(),me:$('#c-for').value.trim()};
+ const o={owner:$('#c-owner').value.trim(),repo:$('#c-repo').value.trim(),branch:$('#c-branch').value.trim()||'main',path:$('#c-path').value.trim()||'data.json',token:$('#c-token').value.trim(),me:$('#c-for').value.trim()};
  if(!o.owner||!o.repo||!o.token)return toast('Renseigne d’abord le dépôt et le token ci-dessus.');
  const b=btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
  const u=location.origin+location.pathname+'#cfg='+b;
@@ -810,14 +945,13 @@ $('#c-url').onclick=e=>e.target.select();
 $('#c-x').onclick=()=>$('#dlg').close();
 $('#c-ok').onclick=()=>{
  C.me=$('#c-me').value.trim()||C.me||'Moi';
- ['owner','repo','branch','path','dir','token'].forEach(k=>C[k]=$('#c-'+k).value.trim());C.dir=(C.dir||'data').replace(/^\/+|\/+$/g,'')||'data';
+ ['owner','repo','branch','path','token'].forEach(k=>C[k]=$('#c-'+k).value.trim());
  localStorage.setItem('tp_cfg',JSON.stringify(C));
  $('#dlg').close();toast('Réglages enregistrés dans ce navigateur.');
- (async()=>{if(!curId){try{await loadIndex()}catch(e){}renderHome()}else renderChat()})();
+ (async()=>{if(!curId){try{await loadAll()}catch(e){}renderHome()}else renderChat()})();
 };
 function renderTrip(){
- $('#t-homes').innerHTML=D.participants.map(p=>`<label class="lb">Domicile de ${esc(p)}</label><input data-home="${esc(p)}" placeholder="Ville, gare ou aéroport de départ" value="${esc((D.homes||{})[p]||'')}">`).join('');
- $('#t-name').value=D.title||'';$('#t-start').value=D.start||'';$('#t-end').value=D.end||'';$('#t-parts').value=D.participants.join(', ');
+ $('#t-name').value=D.title||'';$('#t-cover-prev').innerHTML=D.cover?`<img class="cvp" src="${esc(D.cover)}" alt="">`:'';$('#t-start').value=D.start||'';$('#t-end').value=D.end||'';$('#t-parts').value=D.participants.join(', ');
  const n=nightsList().length;$('#t-info').textContent=n?`${n+1} jours, ${n} nuits.`:'Renseigne les dates pour calculer la durée.';
 }
 $('#t-name').addEventListener('input',e=>{D.title=e.target.value;$('#title').value=D.title;document.title=D.title;changed()});
@@ -836,16 +970,20 @@ $('#t-fill').onclick=()=>{
  D.stages.forEach((s,i)=>{if(!s.date)s.date=addD(D.start,i)});changed();renderList();
 };
 $('#title').onclick=()=>document.querySelector('.tabs [data-t=trip]').click();
+function resizeImg(file,maxW=640){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,maxW/im.width),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};im.onerror=rej;im.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
+$('#t-cover').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{D.cover=await resizeImg(f);changed();renderTrip()}catch(x){toast('Image illisible.')}e.target.value=''});
+$('#t-cover-del').onclick=()=>{delete D.cover;changed();renderTrip()};
 $('#bsave').onclick=save;
 addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 
 function renderAll(fit){
  const run=f=>{try{f()}catch(e){console.error(e);toast('Erreur d’affichage : '+em(e))}};
- run(()=>{$('#title').value=D.title;document.title=D.title});run(renderList);run(renderChat);run(renderTrip);run(renderTrans);run(()=>drawMap(fit));run(drawTrans);run(()=>geoTrans());
+ run(()=>{$('#title').value=D.title;document.title=D.title});run(renderList);run(renderChat);run(renderTrip);run(renderRecap);run(()=>drawMap(fit));run(drawTrans);run(()=>geoTrans());
 }
 (async()=>{
  setGR(grOn);
- try{await loadIndex()}catch(e){toast('Chargement impossible : '+e.message)}
+ try{await loadAll()}catch(e){toast('Chargement impossible : '+em(e))}
+ if(!location.hash&&ALL.trips.length){const t=pickTrip();if(t)history.replaceState(null,'','#t='+t.id)}
  await route();
  if(window.__imp)toast('Configuration importée.'+(C.me?' Tu es '+C.me+'.':''));
  else if(!C.me)openSet();
