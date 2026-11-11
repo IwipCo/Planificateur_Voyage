@@ -21,13 +21,15 @@ input,textarea,select{background:var(--card);border:1px solid var(--line);border
 :focus-visible{outline:2px solid var(--sea);outline-offset:1px}
 #st{font-size:12px;color:var(--mute);white-space:nowrap}
 main{display:grid;grid-template-rows:42vh 1fr;height:calc(100dvh - 52px)}
-@media(min-width:900px){main{grid-template-columns:430px 1fr;grid-template-rows:1fr}#mapwrap{order:2}}
+@media(min-width:900px){main{grid-template-columns:430px minmax(0,1fr);grid-template-rows:1fr}#mapwrap{order:2}}
 #mapwrap{display:flex;flex-direction:column;min-height:0}
-#bar{display:flex;gap:6px;padding:6px 8px;overflow-x:auto;border-bottom:1px solid var(--line)}
-#bar button{white-space:nowrap}
+#bar{display:flex;flex-wrap:wrap;gap:4px;padding:5px 6px;border-bottom:1px solid var(--line)}
+#bar button{white-space:nowrap;padding:3px 8px;font-size:13px}
+#mapwrap,#panel{min-width:0}
 #map{flex:1;min-height:0}
 #panel{overflow:auto;padding:10px 12px;min-height:0}
-.tabs{display:flex;gap:6px;margin-bottom:10px}.tabs button{flex:1;padding:5px 2px;font-size:13px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}.tabs button{flex:1 1 auto;padding:5px 6px;font-size:13px}
+.sec{font:600 15px Georgia,serif;margin:14px 0 6px;display:flex;justify-content:space-between;align-items:center}
 .card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:6px;padding:8px;margin-bottom:8px}
 .card.on{border-left-color:var(--sea)}
 .row{display:flex;gap:6px;align-items:center;margin:4px 0}.row input[type=date]{width:150px}
@@ -84,24 +86,26 @@ dialog p{font-size:13px;color:var(--mute)}
 <main>
  <div id="mapwrap">
   <div id="bar">
-   <button id="vall">Tout le parcours</button>
-   <button id="vday">Jour choisi</button>
-   <button id="bdraw">✏ Tracer</button>
-   <button id="bgr">🟥 Afficher les GR</button>
-   <button id="bauto">⚡ Itinéraire auto : non</button>
-   <button id="broute">🥾 Itinéraire à pied</button>
-   <button id="bundo">↶ Retirer le dernier point</button>
+   <button id="vall" title="Voir tout le parcours">Tout</button>
+   <button id="vday" title="Voir le jour choisi">Jour</button>
+   <button id="bdraw" title="Poser des points sur la carte">✏ Tracer</button>
+   <button id="bgr" title="Afficher ou masquer les GR">🟥 GR</button>
+   <button id="bauto" title="Recalculer l’itinéraire à chaque point posé">⚡ Auto : non</button>
+   <button id="broute" title="Calculer l’itinéraire à pied du jour choisi">🥾 Itinéraire</button>
+   <button id="bundo" title="Retirer le dernier point">↶ Annuler</button>
   </div>
   <div id="map"></div>
  </div>
  <div id="panel">
-  <div class="tabs"><button data-t="stages" class="on">Jours</button><button data-t="lodg">Hébergement</button><button data-t="chat">Discussion</button><button data-t="trip">Voyage</button></div>
+  <div class="tabs"><button data-t="stages" class="on">Jours</button><button data-t="lodg">Hébergement</button><button data-t="trans">Trajets</button><button data-t="chat">Discussion</button><button data-t="trip">Voyage</button></div>
   <section id="p-stages"><p class="sum" id="sum"></p><div class="row"><button id="bexp">Tout déplier</button><button id="bcol">Tout réduire</button></div><div id="list"></div><button id="badd">+ Ajouter un jour</button></section>
   <section id="p-lodg" hidden></section>
+  <section id="p-trans" hidden></section>
   <section id="p-trip" hidden>
    <label class="lb">Nom du voyage</label><input id="t-name">
    <div class="row"><div class="grow"><label class="lb">Départ</label><input type="date" id="t-start"></div><div class="grow"><label class="lb">Arrivée</label><input type="date" id="t-end"></div></div>
    <label class="lb">Participants (séparés par des virgules)</label><input id="t-parts">
+   <div id="t-homes"></div>
    <p class="meta" id="t-info"></p>
    <button id="t-fill">Remplir les dates des jours depuis le départ</button>
    <p><button id="t-del" class="danger">Supprimer ce voyage</button></p>
@@ -170,7 +174,7 @@ async function ghDel(p,sh){
  if(!r.ok)throw new Error(r.status);
 }
 function norm(){
- D.stages=D.stages||[];D.messages=D.messages||[];D.participants=D.participants||['Moi'];D.start=D.start||'';D.end=D.end||'';
+ D.stages=D.stages||[];D.messages=D.messages||[];D.participants=D.participants||['Moi'];D.start=D.start||'';D.end=D.end||'';D.transports=D.transports||[];D.homes=D.homes||{};
  D.stages.forEach(s=>{s.points=s.points||[];const L=s.lodging=s.lodging||{name:'',address:'',price:'',status:'find'};if(!L.status)L.status=L.booked?'booked':'find';delete L.booked;L.nights=L.nights||1});
 }
 let IDX={trips:[]},idxSha=null,idxDirty=false,curId=null;
@@ -295,7 +299,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const rtTok=new Map();
 let autoOn=localStorage.getItem('tp_auto')==='1',at;
 function setAuto(v,silent){autoOn=v;localStorage.setItem('tp_auto',v?'1':'0');
- const b=$('#bauto');b.classList.toggle('on',v);b.textContent='⚡ Itinéraire auto : '+(v?'oui':'non');
+ const b=$('#bauto');b.classList.toggle('on',v);b.textContent='⚡ Auto : '+(v?'oui':'non');
  if(!silent)toast(v?'Itinéraire recalculé automatiquement à chaque point.':'Itinéraire automatique désactivé.');
  if(v&&!silent)autoRoute(cur())}
 function autoRoute(s){if(!autoOn||!s||s.points.length<2)return;clearTimeout(at);at=setTimeout(()=>routeStage(s,true),900)}
@@ -325,7 +329,7 @@ setAuto(autoOn,true);
 const grTiles=L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png',{maxZoom:18,opacity:.85,attribution:'Sentiers © <a href="https://hiking.waymarkedtrails.org">Waymarked Trails</a>'});
 let grOn=localStorage.getItem('tp_gr')==='1';
 function setGR(v){grOn=v;localStorage.setItem('tp_gr',v?'1':'0');if(v)grTiles.addTo(map);else map.removeLayer(grTiles);
- const b=$('#bgr');b.classList.toggle('on',v);b.textContent=v?'🟥 GR affichés':'🟥 Afficher les GR'}
+ const b=$('#bgr');b.classList.toggle('on',v);b.textContent='🟥 GR'}
 $('#bgr').onclick=()=>setGR(!grOn);
 /* Nom d’étape automatique : « ville de départ - ville d’arrivée » (Nominatim) */
 let nt;function scheduleNames(){clearTimeout(nt);nt=setTimeout(autoNames,1500)}
@@ -580,6 +584,62 @@ async function refresh(manual){
 $('#bref').onclick=()=>refresh(true);
 setInterval(()=>refresh(false),60000);
 
+/* ---------- Trajets (aller / retour) ---------- */
+const openT=new Set();
+const MODES={train:['🚆','Train'],car:['🚗','Voiture'],plane:['✈️','Avion'],bus:['🚌','Bus'],other:['🧭','Autre']};
+const chipT=t=>{const x=LS[t.status]||LS.find;return `<span class="chip ${x[2]}">${x[0]} ${x[1]}</span>`};
+const whoLb=w=>w==='*'?'Tous':w;
+const fmtDT=v=>v?new Date(v).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'?';
+const autoPlace=(s,last)=>{if(!s||!s.auto)return'';const a=String(s.name).split(/ - | → /);return a.length>1?(last?a[a.length-1]:a[0]):''};
+const legHd=t=>`<b>${(MODES[t.mode]||MODES.other)[0]} ${esc(whoLb(t.who))} · ${esc(t.from||'?')} → ${esc(t.to||'?')}</b><span class="meta">${fmtDT(t.dep)} → ${fmtDT(t.arr)}${t.price?' · '+esc(t.price)+' €':''}</span>`;
+function transCheck(){
+ const J1=(D.stages[0]&&D.stages[0].date)||D.start,JN=(D.stages.length&&D.stages[D.stages.length-1].date)||D.end,msg=[];
+ D.participants.forEach(p=>{
+  const mine=d=>D.transports.filter(t=>t.dir===d&&(t.who===p||t.who==='*')),o=mine('out'),r=mine('back');
+  if(!o.length)msg.push(p+' : aucun trajet aller');
+  else if(J1&&o.some(t=>t.arr&&t.arr.slice(0,10)>J1))msg.push(p+' : un aller arrive après le début du J1');
+  if(!r.length)msg.push(p+' : aucun trajet retour');
+  else if(JN&&r.some(t=>t.dep&&t.dep.slice(0,10)<JN))msg.push(p+' : un retour part avant le dernier jour');
+ });
+ return msg;
+}
+const legCard=t=>{const o=openT.has(t.id);return `<div class="card" data-id="${t.id}"><div class="hd" data-a="tog"><span class="chev">${o?'▾':'▸'}</span><div class="tt">${legHd(t)}</div>${chipT(t)}</div>`+(o?`<div class="bd">
+ <div class="row"><select data-f="who">${['*',...D.participants].map(w=>`<option value="${esc(w)}" ${t.who===w?'selected':''}>${esc(whoLb(w))}</option>`).join('')}</select><select data-f="mode">${Object.entries(MODES).map(([k,v])=>`<option value="${k}" ${t.mode===k?'selected':''}>${v[0]} ${v[1]}</option>`).join('')}</select></div>
+ <div class="row"><input data-f="from" placeholder="Départ" value="${esc(t.from)}"><input data-f="to" placeholder="Arrivée" value="${esc(t.to)}"></div>
+ <div class="row"><input type="datetime-local" data-f="dep" title="Départ" value="${esc(t.dep)}"><input type="datetime-local" data-f="arr" title="Arrivée" value="${esc(t.arr)}"></div>
+ <input data-f="ref" placeholder="N° de train / vol, réservation…" value="${esc(t.ref)}">
+ <div class="row"><input type="number" min="0" step="1" data-f="price" placeholder="Prix total (€)" value="${esc(t.price)}"><select data-f="status">${Object.entries(LS).filter(([k])=>k!=='na').map(([k,v])=>`<option value="${k}" ${t.status===k?'selected':''}>${v[1]}</option>`).join('')}</select></div>
+ <textarea data-f="notes" rows="2" placeholder="Notes : correspondances, parking, bagages…">${esc(t.notes)}</textarea>
+ <div class="row"><button data-a="del" class="danger">Supprimer</button></div></div>`:'')+'</div>'};
+function renderTrans(){
+ const el=$('#p-trans');if(!el||el.hidden)return;
+ const T=D.transports=D.transports||[],msg=transCheck();
+ const sec=(dir,title)=>{
+  const L=T.filter(t=>t.dir===dir).sort((a,b)=>(a.dep||'9').localeCompare(b.dep||'9')),pr=L.reduce((a,t)=>a+(+t.price||0),0);
+  return `<div class="sec"><span>${title}${pr?' · '+pr+' €':''}</span><button data-a="add" data-dir="${dir}">+ Trajet</button></div>`+(L.map(legCard).join('')||'<p class="meta">Aucun trajet.</p>');
+ };
+ el.innerHTML=(msg.length?msg.map(m=>`<p><span class="chip warn">⚠ ${esc(m)}</span></p>`).join(''):'<p><span class="chip ok">✅ Aller et retour prévus pour chaque participant</span></p>')+sec('out','Aller · domicile → départ J1')+sec('back','Retour · arrivée → domicile');
+}
+$('#p-trans').addEventListener('click',e=>{
+ const ae=e.target.closest('[data-a]');if(!ae)return;
+ const a=ae.dataset.a,c=e.target.closest('.card'),id=c&&c.dataset.id;
+ if(a==='add'){
+  const dir=ae.dataset.dir,me=D.participants.includes(C.me)?C.me:'*',home=(D.homes&&D.homes[me])||'';
+  const t={id:'t'+Date.now().toString(36),dir,who:me,mode:'train',from:'',to:'',dep:'',arr:'',ref:'',price:'',status:'find',notes:''};
+  if(dir==='out'){t.from=home;t.to=autoPlace(D.stages[0],false)}else{t.from=autoPlace(D.stages[D.stages.length-1],true);t.to=home}
+  D.transports.push(t);openT.add(t.id);changed();renderTrans();return;
+ }
+ if(a==='tog'){openT.has(id)?openT.delete(id):openT.add(id);renderTrans();return}
+ if(a==='del'&&confirm('Supprimer ce trajet ?')){D.transports=D.transports.filter(t=>t.id!==id);changed();renderTrans()}
+});
+$('#p-trans').addEventListener('input',e=>{
+ const c=e.target.closest('.card'),f=e.target.dataset.f;if(!c||!f)return;
+ const t=D.transports.find(x=>x.id===c.dataset.id);if(!t)return;
+ t[f]=e.target.value;changed();
+ c.querySelector('.hd .tt').innerHTML=legHd(t);
+ const ch=c.querySelector('.hd .chip');if(ch)ch.outerHTML=chipT(t);
+});
+$('#t-homes').addEventListener('input',e=>{const n=e.target.dataset.home;if(n===undefined)return;(D.homes=D.homes||{})[n]=e.target.value;changed()});
 /* ---------- Accueil & navigation ---------- */
 const hue=id=>{let h=0;for(const c of id)h=(h*31+c.charCodeAt(0))%360;return h};
 const fmtY=d=>new Date(d+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
@@ -605,7 +665,7 @@ async function newTrip(){
  location.hash='#t='+id;
 }
 function showHome(){
- if(curId)upsertMeta();
+ if(curId)upsertMeta();openT.clear();
  curId=null;D=structuredClone(DEF);dirty=false;
  $('#trip').hidden=true;$('#home').hidden=false;document.title='Mes voyages';renderHome();
 }
@@ -652,7 +712,7 @@ $('#t-del').onclick=delTrip;
 /* ---------- Réglages & onglets ---------- */
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
- ['stages','lodg','chat','trip'].forEach(t=>$('#p-'+t).hidden=b.dataset.t!==t);renderLodg();renderTrip();
+ ['stages','lodg','trans','chat','trip'].forEach(t=>$('#p-'+t).hidden=b.dataset.t!==t);renderLodg();renderTrans();renderTrip();
 });
 function openSet(){
  $('#c-for').value='';$('#c-url').value='';$('#c-me').value=C.me||'';
@@ -680,6 +740,7 @@ $('#c-ok').onclick=()=>{
  (async()=>{if(!curId){try{await loadIndex()}catch(e){}renderHome()}else renderChat()})();
 };
 function renderTrip(){
+ $('#t-homes').innerHTML=D.participants.map(p=>`<label class="lb">Domicile de ${esc(p)}</label><input data-home="${esc(p)}" placeholder="Ville, gare ou aéroport de départ" value="${esc((D.homes||{})[p]||'')}">`).join('');
  $('#t-name').value=D.title||'';$('#t-start').value=D.start||'';$('#t-end').value=D.end||'';$('#t-parts').value=D.participants.join(', ');
  const n=nightsList().length;$('#t-info').textContent=n?`${n+1} jours, ${n} nuits.`:'Renseigne les dates pour calculer la durée.';
 }
@@ -702,7 +763,7 @@ $('#title').onclick=()=>document.querySelector('.tabs [data-t=trip]').click();
 $('#bsave').onclick=save;
 addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 
-function renderAll(fit){$('#title').value=D.title;document.title=D.title;renderList();renderChat();renderTrip();drawMap(fit)}
+function renderAll(fit){$('#title').value=D.title;document.title=D.title;renderList();renderChat();renderTrip();renderTrans();drawMap(fit)}
 (async()=>{
  setGR(grOn);
  try{await loadIndex()}catch(e){toast('Chargement impossible : '+e.message)}
