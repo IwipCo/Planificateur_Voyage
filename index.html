@@ -239,14 +239,14 @@ $('#bgr').onclick=()=>setGR(!grOn);
 /* Nom d’étape automatique : « ville de départ - ville d’arrivée » (Nominatim) */
 let nt;function scheduleNames(){clearTimeout(nt);nt=setTimeout(autoNames,1500)}
 async function place(p){
- const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&accept-language=fr&lat='+p[0]+'&lon='+p[1]);
+ const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=12&accept-language=fr&lat='+p[0]+'&lon='+p[1]);
  const a=(await r.json()).address||{};
- return a.hamlet||a.isolated_dwelling||a.locality||a.neighbourhood||a.quarter||a.suburb||a.village||a.town||a.city||a.municipality||null;
+ return a.city||a.town||a.village||a.municipality||a.hamlet||null;
 }
 async function autoNames(){
  for(const s of D.stages){
   if(!s.auto||s.points.length<2)continue;
-  const A=s.points[0],B=s.points[s.points.length-1],k='v2|'+A+'|'+B;
+  const A=s.points[0],B=s.points[s.points.length-1],k='v3|'+A+'|'+B;
   if(s.geoKey===k)continue;
   try{
    const a=await place(A);await sleep(1100);const b=await place(B);
