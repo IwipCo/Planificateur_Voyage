@@ -54,6 +54,11 @@ details{margin:6px 0}summary{cursor:pointer;color:var(--sea);font-weight:600}
 .dayb{width:28px;height:28px;border-radius:50%;color:#fff;font:700 11px/24px system-ui;text-align:center;border:2px solid #fff;box-shadow:0 0 4px #000a}
 table.rc{width:100%;border-collapse:collapse;font-size:14px}.rc th,.rc td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 .rc tr[data-id]{cursor:pointer}.rc tr.miss td{background:rgba(217,164,65,.2)}
+#bback{flex:none}
+#cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;padding:12px}
+.tc{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column}
+.tc .band{height:10px}.tc .tb{padding:10px 12px;display:flex;flex-direction:column;gap:4px}.tc b{font:600 16px Georgia,serif}
+.tc.new{border-style:dashed;justify-content:center;min-height:110px;color:var(--sea);align-items:center;text-align:center}
 .lodg{margin:6px 0}.lodg input{margin-bottom:4px}
 input[type=checkbox]{width:auto}.chk{display:flex;gap:6px;align-items:center;white-space:nowrap}
 #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;display:none;z-index:9999;max-width:90vw}
@@ -63,7 +68,14 @@ dialog p{font-size:13px;color:var(--mute)}
 </style>
 </head>
 <body>
+<div id="home" hidden>
+ <header><span style="flex:1;font:600 20px Georgia,serif">Mes voyages</span><button id="bhref" aria-label="Actualiser">↻</button><button id="bset2" aria-label="Réglages">⚙</button></header>
+ <div id="hmsg"></div>
+ <div id="cards"></div>
+</div>
+<div id="trip" hidden>
 <header>
+ <button id="bback" aria-label="Retour aux voyages">←</button>
  <input id="title" aria-label="Titre du voyage" readonly>
  <span id="st"></span>
  <button id="bset" aria-label="Réglages">⚙</button>
@@ -92,6 +104,7 @@ dialog p{font-size:13px;color:var(--mute)}
    <label class="lb">Participants (séparés par des virgules)</label><input id="t-parts">
    <p class="meta" id="t-info"></p>
    <button id="t-fill">Remplir les dates des jours depuis le départ</button>
+   <p><button id="t-del" class="danger">Supprimer ce voyage</button></p>
   </section>
   <section id="p-chat" hidden>
    <div id="msgs"></div>
@@ -100,17 +113,19 @@ dialog p{font-size:13px;color:var(--mute)}
   </section>
  </div>
 </main>
+</div>
 <dialog id="dlg">
  <h3 style="margin:0 0 4px">Réglages</h3>
- <label>Qui es-tu ?</label><select id="c-me"></select>
+ <label>Qui es-tu ? (auteur de tes messages)</label><input id="c-me" placeholder="Ton prénom">
  <label>Propriétaire du dépôt GitHub</label><input id="c-owner">
  <label>Nom du dépôt</label><input id="c-repo">
  <label>Branche</label><input id="c-branch">
- <label>Fichier de données</label><input id="c-path">
+ <label>Dossier des voyages</label><input id="c-dir">
+ <label>Ancien fichier unique (migration)</label><input id="c-path">
  <label>Token GitHub</label><input id="c-token" type="password" autocomplete="off">
  <p>Crée un token « fine-grained » limité à ce dépôt, avec la permission Contents : Read and write. Il reste uniquement dans ce navigateur. Chaque participant utilise le sien.</p>
  <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
- <label>Partager la configuration avec…</label><select id="c-for"></select>
+ <label>Partager la configuration avec…</label><input id="c-for" placeholder="Prénom de la personne">
  <div class="row"><button id="c-link">Générer et copier le lien</button></div>
  <input id="c-url" readonly placeholder="Le lien apparaîtra ici">
  <p>⚠ Ce lien contient ton token : quiconque l'ouvre peut modifier le dépôt. Envoie-le par un canal privé et révoque le token sur GitHub si le lien fuite.</p>
@@ -129,42 +144,73 @@ function guess(){const h=location.hostname,p=location.pathname.split('/')[1]||''
  try{const o=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,'+').replace(/_/g,'/')))));
   localStorage.setItem('tp_cfg',JSON.stringify(o));window.__imp=1}catch(e){}
  history.replaceState(null,'',location.pathname+location.search)})();
-const C=Object.assign({path:'data.json',branch:'main'},guess(),JSON.parse(localStorage.getItem('tp_cfg')||'{}'));
+const C=Object.assign({path:'data.json',branch:'main',dir:'data'},guess(),JSON.parse(localStorage.getItem('tp_cfg')||'{}'));
 const openS=new Set();
 let D=structuredClone(DEF),sha=null,sel=null,view='all',draw=false,dirty=false;
 
-/* ---------- GitHub ---------- */
-const api=()=>`https://api.github.com/repos/${C.owner}/${C.repo}/contents/${C.path}`;
+/* ---------- GitHub : un index + un fichier par voyage ---------- */
+const api=p=>`https://api.github.com/repos/${C.owner}/${C.repo}/contents/${p}`;
 const hdr=()=>({Authorization:'Bearer '+C.token,Accept:'application/vnd.github+json'});
 const hasGh=()=>C.token&&C.owner&&C.repo;
-async function ghGet(){
- const r=await fetch(api()+'?ref='+C.branch+'&t='+Date.now(),{headers:hdr(),cache:'no-store'});
+async function ghGet(p){
+ const r=await fetch(api(p)+'?ref='+C.branch+'&t='+Date.now(),{headers:hdr(),cache:'no-store'});
  if(!r.ok)throw new Error(r.status);
  const j=await r.json();
  return{sha:j.sha,data:JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))))};
 }
-async function ghPut(){
- const body={message:'Mise à jour par '+(C.me||'?'),branch:C.branch,
-  content:btoa(unescape(encodeURIComponent(JSON.stringify(D,null,1))))};
- if(sha)body.sha=sha;
- const r=await fetch(api(),{method:'PUT',headers:hdr(),body:JSON.stringify(body)});
+async function ghPut(p,obj,sh,msg){
+ const body={message:msg,branch:C.branch,content:btoa(unescape(encodeURIComponent(JSON.stringify(obj))))};
+ if(sh)body.sha=sh;
+ const r=await fetch(api(p),{method:'PUT',headers:hdr(),body:JSON.stringify(body)});
  if(!r.ok)throw new Error(r.status);
- sha=(await r.json()).content.sha;
+ return (await r.json()).content.sha;
+}
+async function ghDel(p,sh){
+ const r=await fetch(api(p),{method:'DELETE',headers:hdr(),body:JSON.stringify({message:'Suppression d’un voyage',sha:sh,branch:C.branch})});
+ if(!r.ok)throw new Error(r.status);
 }
 function norm(){
  D.stages=D.stages||[];D.messages=D.messages||[];D.participants=D.participants||['Moi'];D.start=D.start||'';D.end=D.end||'';
- D.stages.forEach(s=>{const L=s.lodging=s.lodging||{name:'',address:'',price:'',status:'find'};if(!L.status)L.status=L.booked?'booked':'find';delete L.booked;L.nights=L.nights||1});
+ D.stages.forEach(s=>{s.points=s.points||[];const L=s.lodging=s.lodging||{name:'',address:'',price:'',status:'find'};if(!L.status)L.status=L.booked?'booked':'find';delete L.booked;L.nights=L.nights||1});
 }
-async function load(){
- try{
-  if(!hasGh())throw 0;
-  const r=await ghGet();D=r.data;sha=r.sha;
- }catch(e){
-  try{D=await (await fetch(C.path+'?t='+Date.now())).json()}catch(e2){D=structuredClone(DEF)}
+let IDX={trips:[]},idxSha=null,idxDirty=false,curId=null;
+const newData={},deleted=new Set();
+const idxPath=()=>C.dir+'/index.json';
+const tpath=()=>{const m=IDX.trips.find(t=>t.id===curId);return(m&&m.file)||C.dir+'/'+curId+'.json'};
+function metaOf(d,id,file){
+ const st=d.stages||[],km=st.reduce((a,s)=>a+(s.points&&s.points.length>1?dist(s):0),0);
+ const m={id,name:d.title||'',start:d.start||'',end:d.end||'',participants:d.participants||[],days:st.length,km:Math.round(km),updated:Date.now()};
+ if(file)m.file=file;return m;
+}
+function upsertMeta(){
+ if(!curId)return false;
+ const old=IDX.trips.find(t=>t.id===curId),nm=metaOf(D,curId,old&&old.file);
+ if(old&&JSON.stringify({...old,updated:0})===JSON.stringify({...nm,updated:0}))return false;
+ if(old)Object.assign(old,nm);else IDX.trips.push(nm);
+ idxDirty=true;return true;
+}
+async function loadIndex(){
+ IDX={trips:[]};idxSha=null;
+ if(hasGh()){
+  try{const r=await ghGet(idxPath());IDX=r.data;IDX.trips=IDX.trips||[];idxSha=r.sha;return}
+  catch(e){
+   if(e.message==='404'){
+    try{const r=await ghGet(C.path);IDX={trips:[metaOf(r.data,'legacy',C.path)]};idxDirty=true;return}
+    catch(e2){if(e2.message==='404'){IDX={trips:[]};return}toast('GitHub : erreur '+e2.message+' (token ou dépôt ?). Lecture seule.')}
+   }else toast('GitHub : erreur '+e.message+' (token ou dépôt ?). Lecture seule.');
+  }
  }
- norm();
- if(!C.me)C.me=D.participants[0];
- sel=sel||(D.stages[0]&&D.stages[0].id);
+ try{const r=await fetch(idxPath()+'?t='+Date.now());if(r.ok){IDX=await r.json();IDX.trips=IDX.trips||[];return}}catch(e){}
+ try{const r=await fetch(C.path+'?t='+Date.now());if(r.ok)IDX={trips:[metaOf(await r.json(),'legacy',C.path)]}}catch(e){}
+}
+async function saveIndex(){
+ let remote=null,rs=null;
+ try{const r=await ghGet(idxPath());remote=r.data;rs=r.sha}catch(e){if(e.message!=='404')throw e}
+ const mine=IDX.trips.find(t=>t.id===curId);
+ const rt=(remote?(remote.trips||[]):IDX.trips).filter(t=>!deleted.has(t.id));
+ if(remote&&mine){const i=rt.findIndex(t=>t.id===mine.id);if(i>=0)rt[i]=mine;else rt.push(mine)}
+ IDX={trips:rt};
+ idxSha=await ghPut(idxPath(),IDX,rs,'Index des voyages');idxDirty=false;
 }
 function mergeList(a,b){const ids=new Set(a.map(m=>m.id));b.forEach(m=>{if(!ids.has(m.id))a.push(m)});a.sort((x,y)=>x.ts-y.ts)}
 function mergeMsgs(rd){
@@ -173,11 +219,14 @@ function mergeMsgs(rd){
 }
 async function save(){
  if(!hasGh()){openSet();return toast('Renseigne le token GitHub pour enregistrer.')}
+ if(!curId)return;
  status('Enregistrement…');
  try{
-  try{const r=await ghGet();if(r.sha!==sha){mergeMsgs(r.data);sha=r.sha}}
-  catch(e){if(e.message!=='404')throw e;sha=null}
-  await ghPut();dirty=false;status('✓ Enregistré');renderChat();
+  const p=tpath();
+  try{const r=await ghGet(p);if(r.sha!==sha){mergeMsgs(r.data);sha=r.sha}}catch(e){if(e.message!=='404')throw e;sha=null}
+  sha=await ghPut(p,D,sha,'« '+(D.title||'Voyage')+' » par '+(C.me||'?'));
+  if(upsertMeta()||idxDirty)await saveIndex();
+  dirty=false;status('✓ Enregistré');renderChat();
  }catch(e){status('⚠ Échec');toast('Enregistrement impossible (erreur '+e.message+'). Vérifie le token et le dépôt.')}
 }
 function changed(){dirty=true;status('● Non enregistré');scheduleNames()}
@@ -225,7 +274,7 @@ function drawMap(fit){
    }
   }
  });
- if(fit&&all.length)map.fitBounds(all,{padding:[30,30]});
+ if(fit&&all.length)map.fitBounds(all,{padding:[30,30]});else if(fit)map.setView([46.6,2.4],5);
  $('#vall').classList.toggle('on',view==='all');
  $('#vday').classList.toggle('on',view==='day');
  $('#bdraw').classList.toggle('on',draw);
@@ -517,10 +566,11 @@ async function send(){
 $('#msend').onclick=send;
 $('#mtxt').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
 async function refresh(manual){
+ if(!curId)return refreshIdx(manual);
  if(!hasGh())return manual&&toast('Token GitHub requis pour actualiser.');
  if(dirty&&!manual)return;
  try{
-  const r=await ghGet();
+  const r=await ghGet(tpath());
   if(r.sha===sha)return manual&&toast('Déjà à jour.');
   if(dirty){mergeMsgs(r.data);sha=r.sha;toast('Messages récupérés, tes modifications restent à enregistrer.')}
   else{D=r.data;sha=r.sha;norm();if(!D.stages.find(s=>s.id===sel))sel=D.stages[0]&&D.stages[0].id;renderAll(false)}
@@ -530,21 +580,89 @@ async function refresh(manual){
 $('#bref').onclick=()=>refresh(true);
 setInterval(()=>refresh(false),60000);
 
+/* ---------- Accueil & navigation ---------- */
+const hue=id=>{let h=0;for(const c of id)h=(h*31+c.charCodeAt(0))%360;return h};
+const fmtY=d=>new Date(d+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
+function tripStatus(m){const t=iso(new Date());if(!m.start||!m.end)return['Dates à définir','na'];if(t<m.start)return['À venir','ok'];if(t>m.end)return['Terminé','na'];return['En cours','warn']}
+function renderHome(){
+ $('#hmsg').innerHTML=hasGh()?'':'<p class="meta" style="padding:0 14px">Lecture seule : renseigne le token (⚙) pour créer et modifier des voyages.</p>';
+ const ts=[...IDX.trips].sort((a,b)=>(b.start||'9999').localeCompare(a.start||'9999'));
+ $('#cards').innerHTML=ts.map(m=>{const [lb,cl]=tripStatus(m);return `<div class="tc" data-id="${esc(m.id)}"><div class="band" style="background:hsl(${hue(m.id)} 55% 45%)"></div><div class="tb"><b>${esc(m.name||'Sans nom')}</b>
+  <div class="meta">${m.start?fmtY(m.start)+(m.end?' → '+fmtY(m.end):''):'Dates à définir'}</div>
+  <div class="meta">${m.days||0} jour(s)${m.km?' · '+m.km+' km':''}</div>
+  <div class="meta">👥 ${esc((m.participants||[]).join(', '))}</div><div><span class="chip ${cl}">${lb}</span></div></div></div>`}).join('')+'<div class="tc new" id="tnew"><div class="tb"><b>＋ Nouveau voyage</b></div></div>';
+}
+$('#cards').addEventListener('click',e=>{
+ if(e.target.closest('#tnew'))return newTrip();
+ const c=e.target.closest('.tc[data-id]');if(c)location.hash='#t='+c.dataset.id;
+});
+async function newTrip(){
+ if(!hasGh()){toast('Renseigne le token (⚙) pour créer un voyage.');return openSet()}
+ const name=(prompt('Nom du voyage ?')||'').trim();if(!name)return;
+ const id='v'+Date.now().toString(36);
+ newData[id]={title:name,start:'',end:'',participants:[C.me||'Moi'],stages:[],messages:[]};
+ IDX.trips.push(metaOf(newData[id],id));idxDirty=true;
+ location.hash='#t='+id;
+}
+function showHome(){
+ if(curId)upsertMeta();
+ curId=null;D=structuredClone(DEF);dirty=false;
+ $('#trip').hidden=true;$('#home').hidden=false;document.title='Mes voyages';renderHome();
+}
+async function openTrip(id){
+ if(!IDX.trips.find(t=>t.id===id)){toast('Voyage introuvable.');location.hash='';return}
+ curId=id;sha=null;dirty=false;let fresh=false;
+ if(newData[id]){D=newData[id];delete newData[id];fresh=true}
+ else{
+  try{if(!hasGh())throw 0;const r=await ghGet(tpath());D=r.data;sha=r.sha}
+  catch(e){try{const r=await fetch(tpath()+'?t='+Date.now());if(!r.ok)throw 0;D=await r.json()}catch(e2){toast('Impossible de charger ce voyage.');curId=null;location.hash='';return}}
+ }
+ norm();openS.clear();openC.clear();sel=D.stages[0]&&D.stages[0].id;view='all';draw=false;
+ $('#home').hidden=true;$('#trip').hidden=false;map.invalidateSize();renderAll(true);
+ status(hasGh()?'':'Lecture seule : token à régler (⚙)');
+ if(fresh){dirty=true;await save()}
+}
+async function route(){
+ const m=location.hash.match(/^#t=([\w-]+)$/);
+ if(curId&&(!m||m[1]!==curId)&&dirty&&hasGh())await save();
+ if(!m)return showHome();
+ await openTrip(m[1]);
+}
+addEventListener('hashchange',route);
+$('#bback').onclick=async()=>{
+ if(dirty){if(hasGh())await save();else if(!confirm('Quitter sans enregistrer ?'))return}
+ location.hash='';
+};
+async function refreshIdx(manual){
+ if(!hasGh())return manual&&toast('Token GitHub requis pour actualiser.');
+ try{const r=await ghGet(idxPath());if(r.sha!==idxSha&&!idxDirty){IDX=r.data;IDX.trips=IDX.trips||[];idxSha=r.sha;renderHome()}else if(manual)toast('Déjà à jour.')}catch(e){manual&&toast('Actualisation impossible.')}
+}
+$('#bhref').onclick=()=>refreshIdx(true);
+async function delTrip(){
+ if(!curId||!confirm('Supprimer définitivement ce voyage pour tous les participants ?'))return;
+ if(!hasGh())return toast('Token GitHub requis.');
+ const id=curId,p=tpath();
+ try{
+  try{const r=await ghGet(p);await ghDel(p,r.sha)}catch(e){if(e.message!=='404')throw e}
+  deleted.add(id);IDX.trips=IDX.trips.filter(t=>t.id!==id);curId=null;dirty=false;
+  await saveIndex();location.hash='';
+ }catch(e){toast('Suppression impossible (erreur '+e.message+').')}
+}
+$('#t-del').onclick=delTrip;
 /* ---------- Réglages & onglets ---------- */
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
  ['stages','lodg','chat','trip'].forEach(t=>$('#p-'+t).hidden=b.dataset.t!==t);renderLodg();renderTrip();
 });
 function openSet(){
- $('#c-for').innerHTML=(D.participants.filter(p=>p!==C.me).length?D.participants.filter(p=>p!==C.me):D.participants).map(p=>`<option>${esc(p)}</option>`).join('');
- $('#c-url').value='';
- $('#c-me').innerHTML=D.participants.map(p=>`<option ${p===C.me?'selected':''}>${esc(p)}</option>`).join('');
- ['owner','repo','branch','path','token'].forEach(k=>$('#c-'+k).value=C[k]||'');
+ $('#c-for').value='';$('#c-url').value='';$('#c-me').value=C.me||'';
+ ['owner','repo','branch','path','dir','token'].forEach(k=>$('#c-'+k).value=C[k]||'');
  $('#dlg').showModal();
 }
+$('#bset2').onclick=openSet;
 $('#bset').onclick=openSet;
 $('#c-link').onclick=async()=>{
- const o={owner:$('#c-owner').value.trim(),repo:$('#c-repo').value.trim(),branch:$('#c-branch').value.trim()||'main',path:$('#c-path').value.trim()||'data.json',token:$('#c-token').value.trim(),me:$('#c-for').value};
+ const o={owner:$('#c-owner').value.trim(),repo:$('#c-repo').value.trim(),branch:$('#c-branch').value.trim()||'main',path:$('#c-path').value.trim()||'data.json',dir:$('#c-dir').value.trim()||'data',token:$('#c-token').value.trim(),me:$('#c-for').value.trim()};
  if(!o.owner||!o.repo||!o.token)return toast('Renseigne d’abord le dépôt et le token ci-dessus.');
  const b=btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
  const u=location.origin+location.pathname+'#cfg='+b;
@@ -555,10 +673,11 @@ $('#c-link').onclick=async()=>{
 $('#c-url').onclick=e=>e.target.select();
 $('#c-x').onclick=()=>$('#dlg').close();
 $('#c-ok').onclick=()=>{
- C.me=$('#c-me').value||D.participants[0];
- ['owner','repo','branch','path','token'].forEach(k=>C[k]=$('#c-'+k).value.trim());
+ C.me=$('#c-me').value.trim()||C.me||'Moi';
+ ['owner','repo','branch','path','dir','token'].forEach(k=>C[k]=$('#c-'+k).value.trim());C.dir=(C.dir||'data').replace(/^\/+|\/+$/g,'')||'data';
  localStorage.setItem('tp_cfg',JSON.stringify(C));
- $('#dlg').close();renderChat();toast('Réglages enregistrés dans ce navigateur.');
+ $('#dlg').close();toast('Réglages enregistrés dans ce navigateur.');
+ (async()=>{if(!curId){try{await loadIndex()}catch(e){}renderHome()}else renderChat()})();
 };
 function renderTrip(){
  $('#t-name').value=D.title||'';$('#t-start').value=D.start||'';$('#t-end').value=D.end||'';$('#t-parts').value=D.participants.join(', ');
@@ -572,7 +691,7 @@ $('#t-name').addEventListener('input',e=>{D.title=e.target.value;$('#title').val
 $('#t-parts').addEventListener('change',e=>{
  const p=e.target.value.split(',').map(x=>x.trim()).filter(Boolean);if(!p.length)return toast('Il faut au moins un participant.');
  D.participants=p;
- if(!p.includes(C.me)){C.me=p[0];localStorage.setItem('tp_cfg',JSON.stringify(C));toast('Vérifie « Qui es-tu ? » dans ⚙ : tu es maintenant '+C.me+'.')}
+ if(C.me&&!p.includes(C.me))toast('Ton prénom (« '+C.me+' ») n’est pas dans la liste des participants.');
  changed();renderChat();renderTrip();
 });
 $('#t-fill').onclick=()=>{
@@ -584,7 +703,13 @@ $('#bsave').onclick=save;
 addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 
 function renderAll(fit){$('#title').value=D.title;document.title=D.title;renderList();renderChat();renderTrip();drawMap(fit)}
-load().then(()=>{renderAll(true);if(window.__imp)toast('Configuration importée. Tu es '+C.me+'.');setTimeout(()=>{map.invalidateSize();setGR(grOn)},200);if(!hasGh())status('Lecture seule : token à régler (⚙)')});
+(async()=>{
+ setGR(grOn);
+ try{await loadIndex()}catch(e){toast('Chargement impossible : '+e.message)}
+ await route();
+ if(window.__imp)toast('Configuration importée.'+(C.me?' Tu es '+C.me+'.':''));
+ else if(!C.me)openSet();
+})();
 </script>
 </body>
 </html>
