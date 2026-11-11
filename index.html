@@ -226,6 +226,7 @@ async function routeStage(s){
   }
   s.route=out;s.routeKm=km;s.routeKey=key(s);changed();renderList();drawMap();
   toast('Itinéraire calculé : '+km.toFixed(1)+' km');
+  elevStage(s,true);
  }catch(e){toast('Calcul impossible : service indisponible ou aucun chemin entre ces repères.')}
 }
 $('#broute').onclick=()=>routeStage(cur());
@@ -259,6 +260,88 @@ $('#bundo').onclick=()=>{const s=cur();if(s&&s.points.length){s.points.pop();cha
 
 /* ---------- Étapes ---------- */
 const openC=new Set();
+/* ---- Dénivelé & profil (Open-Meteo, altitudes) ---- */
+const elevKey=s=>key(s)+'|'+(s.routeKey||'');
+function samples(s){
+ const line=okRoute(s)?s.route:s.points,cum=[0];
+ for(let i=1;i<line.length;i++)cum.push(cum[i-1]+map.distance(line[i-1],line[i]));
+ const tot=cum[cum.length-1],n=Math.min(300,Math.max(2,Math.round(tot/50)+1)),out=[];let j=1;
+ for(let k=0;k<n;k++){
+  const t=tot*k/(n-1);while(j<cum.length-1&&cum[j]<t)j++;
+  const f=cum[j]>cum[j-1]?(t-cum[j-1])/(cum[j]-cum[j-1]):0;
+  out.push({d:t/1000,la:line[j-1][0]+(line[j][0]-line[j-1][0])*f,lo:line[j-1][1]+(line[j][1]-line[j-1][1])*f});
+ }
+ return out;
+}
+async function elevStage(s,quiet){
+ if(!s||s.points.length<2)return quiet||toast('Place au moins 2 repères sur la carte.');
+ quiet||toast('Calcul du dénivelé…');
+ try{
+  const sm=samples(s),z=[];
+  for(let i=0;i<sm.length;i+=100){
+   const c=sm.slice(i,i+100);
+   const r=await fetch('https://api.open-meteo.com/v1/elevation?latitude='+c.map(p=>p.la.toFixed(5)).join(',')+'&longitude='+c.map(p=>p.lo.toFixed(5)).join(','));
+   const j=await r.json();if(!j.elevation)throw 0;z.push(...j.elevation);
+  }
+  const sz=z.map((v,i)=>{const a=z.slice(Math.max(0,i-2),i+3);return a.reduce((x,y)=>x+y,0)/a.length});
+  let up=0,dn=0,ref=sz[0];
+  for(const v of sz){if(v-ref>=3){up+=v-ref;ref=v}else if(ref-v>=3){dn+=ref-v;ref=v}}
+  s.elev={d:sm.map(p=>+p.d.toFixed(2)),z:sz.map(Math.round),up:Math.round(up),dn:Math.round(dn),min:Math.round(Math.min(...sz)),max:Math.round(Math.max(...sz))};
+  s.elevKey=elevKey(s);changed();renderList();
+ }catch(e){quiet||toast('Dénivelé indisponible (service d’altitude injoignable).')}
+}
+function profSvg(s){
+ const e=s.elev,W=300,H=80,P=4,dm=e.d[e.d.length-1]||1,lo=e.min,hi=Math.max(e.max,lo+10);
+ const x=d=>P+(W-2*P)*d/dm,y=z=>H-P-(H-2*P)*(z-lo)/(hi-lo);
+ const pts=e.d.map((d,i)=>x(d).toFixed(1)+','+y(e.z[i]).toFixed(1)).join(' ');
+ return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Profil altimétrique"><polygon points="${P},${H-P} ${pts} ${W-P},${H-P}" fill="var(--sea)" opacity=".25"/><polyline points="${pts}" fill="none" stroke="var(--sea)" stroke-width="1.5"/></svg><div class="meta" style="display:flex;justify-content:space-between"><span>min ${e.min} m</span><span>${dm.toFixed(1)} km</span><span>max ${e.max} m</span></div>`;
+}
+const elevHtml=s=>s.elev?`<div class="meta">↗ ${s.elev.up} m · ↘ ${s.elev.dn} m${s.elevKey!==elevKey(s)?' · à recalculer':''}</div>`+profSvg(s):'<div class="meta">Dénivelé : non calculé</div>';
+/* ---- Météo & marées (Open-Meteo) ---- */
+const WX={};
+const wxk=s=>s.date+'|'+(s.points[0]||[]).join(',');
+const wmo=c=>c===0?['☀️','Dégagé']:c<=2?['🌤','Peu nuageux']:c===3?['☁️','Couvert']:c<=48?['🌫','Brouillard']:c<=57?['🌦','Bruine']:c<=67?['🌧','Pluie']:c<=77?['🌨','Neige']:c<=82?['🌦','Averses']:['⛈','Orage'];
+const cardinal=d=>['N','NE','E','SE','S','SO','O','NO'][Math.round(d/45)%8];
+function tideExt(t,v,date){
+ const out=[];
+ for(let i=1;i<v.length-1;i++){
+  const a=v[i-1],b=v[i],c=v[i+1];
+  if(a==null||b==null||c==null||t[i].slice(0,10)!==date)continue;
+  const hi=b>=a&&b>c,lo=b<=a&&b<c;if(!hi&&!lo)continue;
+  const den=a-2*b+c,x=den?0.5*(a-c)/den:0,z=den?b-(c-a)*(c-a)/(8*den):b;
+  const mn=Math.round(parseInt(t[i].slice(11,13))*60+parseInt(t[i].slice(14,16))+x*60);
+  const hh=Math.floor((((mn%1440)+1440)%1440)/60),mm=((mn%60)+60)%60;
+  out.push({hi,z,t:String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')});
+ }
+ return out;
+}
+async function loadWx(s){
+ const box=document.querySelector('.wx[data-id="'+s.id+'"]');if(!box)return;
+ const show=h=>{WX[s.id]={k:wxk(s),html:h};box.innerHTML=h};
+ if(!s.date)return show('<p class="meta">Renseigne la date de l’étape.</p>');
+ if(!s.points.length)return show('<p class="meta">Place au moins un repère pour localiser l’étape.</p>');
+ const diff=Math.round((new Date(s.date+'T12:00')-new Date())/864e5);
+ if(diff>15)return show('<p class="meta">Les prévisions sont disponibles 16 jours avant la date.</p>');
+ if(diff<-1)return show('<p class="meta">Date passée : plus de prévisions.</p>');
+ box.innerHTML='<p class="meta">Chargement…</p>';
+ const [la,lo]=s.points[0],d2=new Date(s.date+'T12:00');d2.setDate(d2.getDate()+1);
+ const e2=d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-'+String(d2.getDate()).padStart(2,'0');
+ try{
+  const [w,m]=await Promise.all([
+   fetch('https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+lo+'&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,sunrise,sunset&timezone=Europe%2FParis&start_date='+s.date+'&end_date='+s.date).then(r=>r.json()),
+   fetch('https://marine-api.open-meteo.com/v1/marine?latitude='+la+'&longitude='+lo+'&hourly=sea_level_height_msl&timezone=Europe%2FParis&start_date='+s.date+'&end_date='+e2).then(r=>r.json()).catch(()=>null)
+  ]);
+  const d=w.daily;if(!d||!d.time||!d.time.length)throw 0;
+  const [ic,lb]=wmo(d.weather_code[0]),hh=x=>String(x).slice(11,16);
+  const te=m&&m.hourly&&m.hourly.sea_level_height_msl?tideExt(m.hourly.time,m.hourly.sea_level_height_msl,s.date):[];
+  const th=te.length?te.map(x=>`<div class="meta">${x.hi?'▲ Pleine mer':'▼ Basse mer'} ${x.t} · ${x.z>0?'+':''}${x.z.toFixed(1)} m</div>`).join(''):'<div class="meta">Marées indisponibles pour ce point.</div>';
+  show(`<div>${ic} <b>${lb}</b> · ${Math.round(d.temperature_2m_min[0])} à ${Math.round(d.temperature_2m_max[0])} °C</div>
+  <div class="meta">Pluie ${d.precipitation_sum[0]} mm (risque ${d.precipitation_probability_max[0]??'?'} %) · vent ${Math.round(d.wind_speed_10m_max[0])} km/h ${cardinal(d.wind_direction_10m_dominant[0])}, rafales ${Math.round(d.wind_gusts_10m_max[0])} · soleil ${hh(d.sunrise[0])}–${hh(d.sunset[0])}</div>
+  <div style="margin-top:6px"><b>Marées</b> (niveau par rapport au niveau moyen)</div>${th}
+  <p class="meta">Prévisions pour le point de départ. Marées estimées par un modèle global : écart possible d’une heure ou plus, à vérifier sur <a href="https://maree.shom.fr/" target="_blank" rel="noopener">le SHOM</a> avant de passer un estuaire ou une grève.</p>
+  <button data-a="wx">Actualiser</button>`);
+ }catch(e){show('<p class="meta">Prévisions indisponibles pour le moment.</p><button data-a="wx">Réessayer</button>')}
+}
 const msgHtml=m=>`<div class="m ${m.author===C.me?'me':''}"><small>${esc(m.author)} · ${new Date(m.ts).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}</small>${esc(m.text).replace(/\n/g,'<br>')}</div>`;
 const chatHtml=s=>(s.chat||[]).map(msgHtml).join('')||'<p class="meta">Pas encore de message.</p>';
 function renderStageChats(){
@@ -273,15 +356,16 @@ function renderList(){
  renderSum();
  $('#list').innerHTML=D.stages.map((s,i)=>`<div class="card ${s.id===sel?'on':''}" data-id="${s.id}">
   <div class="row"><span class="dot" style="background:${COL[i%COL.length]}"></span><input data-f="name" value="${esc(s.name)}"><input type="date" data-f="date" value="${esc(s.date)}"></div>
-  <div class="meta">${dist(s).toFixed(1)} km · ${s.points.length} repère(s) · ${okRoute(s)?'itinéraire à pied':s.route?'itinéraire à recalculer':'ligne droite'}</div>
+  <div class="meta">${dist(s).toFixed(1)} km · ${s.points.length} repère(s) · ${okRoute(s)?'itinéraire à pied':s.route?'itinéraire à recalculer':'ligne droite'}</div>${elevHtml(s)}
   <div class="lodg"><div class="meta">Hébergement</div>
   <input data-l="name" placeholder="Nom" value="${esc((s.lodging||{}).name)}">
   <input data-l="address" placeholder="Adresse" value="${esc((s.lodging||{}).address)}">
   <div class="row"><input data-l="price" type="number" min="0" step="1" placeholder="Prix total (€)" value="${esc((s.lodging||{}).price)}"><label class="chk"><input type="checkbox" data-l="booked" ${(s.lodging||{}).booked?'checked':''}> Réservé</label></div></div>
   <textarea data-f="notes" rows="2" placeholder="Notes : ravitaillement, marées, météo…">${esc(s.notes)}</textarea>
-  <details data-id="${s.id}" ${openC.has(s.id)?'open':''}><summary>💬 Discussion (${(s.chat||[]).length})</summary><div class="sc" data-id="${s.id}">${chatHtml(s)}</div>
+  <details data-k="w" data-id="${s.id}" ${openC.has('w'+s.id)?'open':''}><summary>🌤 Météo &amp; marées</summary><div class="wx" data-id="${s.id}">${(WX[s.id]||{}).html||'<p class="meta">Chargement…</p>'}</div></details>
+  <details data-k="c" data-id="${s.id}" ${openC.has('c'+s.id)?'open':''}><summary>💬 Discussion (${(s.chat||[]).length})</summary><div class="sc" data-id="${s.id}">${chatHtml(s)}</div>
    <div class="row"><input class="cin" placeholder="Message sur cette étape…"><button class="pri" data-a="csend">Envoyer</button></div></details>
-  <div class="row" style="flex-wrap:wrap"><button data-a="view">Voir</button><button data-a="route">🥾 Itinéraire à pied</button><button data-a="auto">Nom auto</button><button data-a="up" aria-label="Monter">↑</button><button data-a="down" aria-label="Descendre">↓</button><button data-a="del" class="danger">Supprimer</button></div>
+  <div class="row" style="flex-wrap:wrap"><button data-a="view">Voir</button><button data-a="route">🥾 Itinéraire à pied</button><button data-a="elev">📈 Dénivelé &amp; profil</button><button data-a="auto">Nom auto</button><button data-a="up" aria-label="Monter">↑</button><button data-a="down" aria-label="Descendre">↓</button><button data-a="del" class="danger">Supprimer</button></div>
  </div>`).join('')||'<p class="meta">Aucune étape. Ajoutes-en une pour commencer.</p>';
 }
 $('#list').addEventListener('input',e=>{
@@ -289,13 +373,13 @@ $('#list').addEventListener('input',e=>{
  const s=D.stages.find(x=>x.id===c.dataset.id);
  if(l){s.lodging=s.lodging||{name:'',address:'',price:'',booked:false};s.lodging[l]=e.target.type==='checkbox'?e.target.checked:e.target.value;changed();renderSum();return}
  s[f]=e.target.value;if(f==='name')s.auto=false;changed();
- if(f==='date')renderSum();
+ if(f==='date'){renderSum();delete WX[s.id];if(openC.has('w'+s.id))loadWx(s)}
 });
 function renderSum(){
  const tot=D.stages.reduce((a,s)=>a+dist(s),0);
  const ds=D.stages.map(s=>s.date).filter(Boolean).sort();
- const lg=D.stages.map(s=>s.lodging||{}),pr=lg.reduce((a,l)=>a+(+l.price||0),0),bk=lg.filter(l=>l.booked).length;
- $('#sum').textContent=`${D.stages.length} étape(s) · ${tot.toFixed(1)} km`+(ds.length?` · du ${fmtD(ds[0])} au ${fmtD(ds[ds.length-1])}`:'')+(pr?` · hébergement ${pr} €`:'')+` · ${bk}/${D.stages.length} réservé(s)`;
+ const up=D.stages.reduce((a,s)=>a+(s.elev?s.elev.up:0),0),lg=D.stages.map(s=>s.lodging||{}),pr=lg.reduce((a,l)=>a+(+l.price||0),0),bk=lg.filter(l=>l.booked).length;
+ $('#sum').textContent=`${D.stages.length} étape(s) · ${tot.toFixed(1)} km`+(up?` · D+ ${up} m`:'')+(ds.length?` · du ${fmtD(ds[0])} au ${fmtD(ds[ds.length-1])}`:'')+(pr?` · hébergement ${pr} €`:'')+` · ${bk}/${D.stages.length} réservé(s)`;
 }
 $('#list').addEventListener('click',e=>{
  const c=e.target.closest('.card'),a=e.target.dataset.a;if(!c)return;
@@ -304,6 +388,8 @@ $('#list').addEventListener('click',e=>{
  sel=id;
  if(a==='view'){view='day';drawMap(true)}
  if(a==='csend'){stageSend(D.stages[i],c);return}
+ if(a==='elev'){elevStage(D.stages[i]);return}
+ if(a==='wx'){loadWx(D.stages[i]);return}
  if(a==='route'){routeStage(D.stages[i]);return}
  if(a==='auto'){D.stages[i].auto=true;D.stages[i].geoKey=null;scheduleNames();toast('Nom calculé à partir des repères…');return}
  if(a==='up'&&i>0){[D.stages[i-1],D.stages[i]]=[D.stages[i],D.stages[i-1]];changed()}
@@ -327,8 +413,11 @@ $('#list').addEventListener('keydown',e=>{
 });
 $('#list').addEventListener('toggle',e=>{
  const d=e.target;if(d.tagName!=='DETAILS')return;
- d.open?openC.add(d.dataset.id):openC.delete(d.dataset.id);
- if(d.open){const sc=d.querySelector('.sc');sc.scrollTop=sc.scrollHeight}
+ const k=d.dataset.k+d.dataset.id,st=D.stages.find(x=>x.id===d.dataset.id);
+ d.open?openC.add(k):openC.delete(k);
+ if(!d.open||!st)return;
+ if(d.dataset.k==='c'){const sc=d.querySelector('.sc');sc.scrollTop=sc.scrollHeight}
+ if(d.dataset.k==='w'){const c=WX[st.id];if(!c||c.k!==wxk(st))loadWx(st)}
 },true);
 /* ---------- Discussion ---------- */
 function renderChat(){
