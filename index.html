@@ -65,8 +65,7 @@ dialog p{font-size:13px;color:var(--mute)}
    <button id="vday">Étape choisie</button>
    <button id="bdraw">✏ Tracer</button>
    <button id="bgr">🟥 Afficher le GR34</button>
-   <select id="rmode" aria-label="Mode de tracé"><option value="foot">Tracer : chemins piétons</option><option value="gr">Tracer : suivre le GR34</option></select>
-   <button id="broute">🥾 Calculer l’itinéraire</button>
+   <button id="broute">🥾 Itinéraire à pied</button>
    <button id="bundo">↶ Retirer le dernier point</button>
   </div>
   <div id="map"></div>
@@ -215,82 +214,27 @@ $('#bdraw').onclick=()=>{draw=!draw;if(draw)view='day';drawMap();if(draw)toast('
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function routeStage(s){
  if(!s||s.points.length<2)return toast('Place au moins 2 repères sur la carte (✏ Tracer).');
- const mode=$('#rmode').value;
- toast(mode==='gr'?'Calcul le long du GR34…':'Calcul de l’itinéraire à pied…');
+ toast('Calcul de l’itinéraire à pied…');
  try{
-  let out=[],km=0,gaps=0;
-  if(mode==='gr'){const r=await routeGR(s);out=r.out;km=r.km;gaps=r.gaps}
-  else for(let i=0;i<s.points.length-1;i+=19){
+  let out=[],km=0;
+  for(let i=0;i<s.points.length-1;i+=19){
    const co=s.points.slice(i,i+20).map(p=>p[1]+','+p[0]).join(';');
    const r=await fetch('https://routing.openstreetmap.de/routed-foot/route/v1/driving/'+co+'?overview=full&geometries=geojson');
    const j=await r.json();if(j.code!=='Ok')throw 0;
    km+=j.routes[0].distance/1000;
    j.routes[0].geometry.coordinates.forEach(([lo,la])=>{const q=[+la.toFixed(5),+lo.toFixed(5)];if(!out.length||map.distance(out[out.length-1],q)>12)out.push(q)});
   }
-  s.route=out;s.routeKm=km;s.routeKey=key(s);s.routeMode=mode;changed();renderList();drawMap();
-  toast('Itinéraire calculé : '+km.toFixed(1)+' km'+(gaps?' (GR34 interrompu à '+gaps+' endroit(s) : segments droits)':''));
- }catch(e){toast(e.custom?e.message:'Calcul impossible : service indisponible ou aucun chemin entre ces repères.')}
+  s.route=out;s.routeKm=km;s.routeKey=key(s);changed();renderList();drawMap();
+  toast('Itinéraire calculé : '+km.toFixed(1)+' km');
+ }catch(e){toast('Calcul impossible : service indisponible ou aucun chemin entre ces repères.')}
 }
 $('#broute').onclick=()=>routeStage(cur());
-/* GR34 : tracé OpenStreetMap (Overpass), affichage et guidage */
-map.createPane('gr').style.zIndex=350;
-const grLayer=L.layerGroup().addTo(map);
-let grC=null,grOn=localStorage.getItem('tp_gr')==='1',gt;
-async function overpass(q){
- for(const u of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']){
-  try{const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q)});if(r.ok)return await r.json()}catch(e){}
- }
- throw new Error('overpass');
-}
-async function gr34(bb){ /* bb = [sud, ouest, nord, est] */
- if(grC&&bb[0]>=grC.bb[0]&&bb[1]>=grC.bb[1]&&bb[2]<=grC.bb[2]&&bb[3]<=grC.bb[3])return grC.ways;
- const p=.05,b=[bb[0]-p,bb[1]-p,bb[2]+p,bb[3]+p].map(x=>+x.toFixed(4)).join(',');
- const j=await overpass('[out:json][timeout:25];relation["route"="hiking"]["ref"~"(^|;) ?GR ?34($|;)"]('+b+')->.r;way(r.r)('+b+');out geom;');
- const ways=j.elements.filter(e=>e.geometry).map(e=>e.geometry.map(g=>[g.lat,g.lon]));
- grC={bb:[bb[0]-p,bb[1]-p,bb[2]+p,bb[3]+p],ways};return ways;
-}
-async function drawGR(){
- grLayer.clearLayers();if(!grOn)return;
- if(map.getZoom()<9)return toast('Zoome un peu pour afficher le GR34.');
- const b=map.getBounds().pad(.15);
- try{
-  const ways=await gr34([b.getSouth(),b.getWest(),b.getNorth(),b.getEast()]);
-  if(!grOn)return;grLayer.clearLayers();
-  ways.forEach(w=>L.polyline(w,{pane:'gr',color:'#c1121f',weight:6,opacity:.5,interactive:false}).addTo(grLayer));
-  if(!ways.length)toast('Aucun GR34 dans cette zone.');
- }catch(e){toast('GR34 indisponible pour le moment (service OpenStreetMap).')}
-}
-function setGR(v){grOn=v;localStorage.setItem('tp_gr',v?'1':'0');const b=$('#bgr');b.classList.toggle('on',v);b.textContent=v?'🟥 GR34 affiché':'🟥 Afficher le GR34';drawGR()}
+/* Affichage du GR34 : calque de sentiers balisés Waymarked Trails */
+const grTiles=L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png',{maxZoom:18,opacity:.85,attribution:'Sentiers © <a href="https://hiking.waymarkedtrails.org">Waymarked Trails</a>'});
+let grOn=localStorage.getItem('tp_gr')==='1';
+function setGR(v){grOn=v;localStorage.setItem('tp_gr',v?'1':'0');if(v)grTiles.addTo(map);else map.removeLayer(grTiles);
+ const b=$('#bgr');b.classList.toggle('on',v);b.textContent=v?'🟥 GR34 affiché':'🟥 Afficher le GR34'}
 $('#bgr').onclick=()=>setGR(!grOn);
-map.on('moveend',()=>{if(grOn){clearTimeout(gt);gt=setTimeout(drawGR,600)}});
-function dijkstra(adj,src,dst){
- const d=new Float64Array(adj.length).fill(Infinity),prev=new Int32Array(adj.length).fill(-1),h=[[0,src]];d[src]=0;
- const push=x=>{h.push(x);let i=h.length-1;while(i>0){const q=(i-1)>>1;if(h[q][0]<=h[i][0])break;[h[q],h[i]]=[h[i],h[q]];i=q}};
- const pop=()=>{const t=h[0],l=h.pop();if(h.length){h[0]=l;let i=0;for(;;){const a=2*i+1,b=a+1;let m=i;if(a<h.length&&h[a][0]<h[m][0])m=a;if(b<h.length&&h[b][0]<h[m][0])m=b;if(m===i)break;[h[m],h[i]]=[h[i],h[m]];i=m}}return t};
- while(h.length){const [du,u]=pop();if(du>d[u])continue;if(u===dst)break;for(const [v,w] of adj[u]){const nd=du+w;if(nd<d[v]){d[v]=nd;prev[v]=u;push([nd,v])}}}
- if(d[dst]===Infinity)return null;
- const path=[];for(let u=dst;u!==-1;u=prev[u])path.push(u);return path.reverse();
-}
-async function routeGR(s){
- const bad=m=>Object.assign(new Error(m),{custom:1}),pad=.06;
- const la=s.points.map(p=>p[0]),lo=s.points.map(p=>p[1]);
- const ways=await gr34([Math.min(...la)-pad,Math.min(...lo)-pad,Math.max(...la)+pad,Math.max(...lo)+pad]);
- if(!ways.length)throw bad('Aucun tracé du GR34 trouvé près de ces repères.');
- const idx=new Map(),xy=[],adj=[];
- const node=p=>{const k=p[0]+','+p[1];let i=idx.get(k);if(i===undefined){i=xy.length;idx.set(k,i);xy.push(p);adj.push([])}return i};
- ways.forEach(w=>{for(let i=1;i<w.length;i++){const a=node(w[i-1]),b=node(w[i]),d=map.distance(w[i-1],w[i]);adj[a].push([b,d]);adj[b].push([a,d])}});
- const snap=s.points.map((p,j)=>{let best=0,bd=Infinity;xy.forEach((q,i)=>{const d=map.distance(p,q);if(d<bd){bd=d;best=i}});
-  if(bd>1500)throw bad('Le repère '+(j+1)+' est à '+Math.round(bd)+' m du GR34 : rapproche-le du sentier.');return best});
- const out=[];let km=0,gaps=0;
- const add=q=>{if(!out.length||map.distance(out[out.length-1],q)>12)out.push([+q[0].toFixed(5),+q[1].toFixed(5)])};
- for(let j=0;j<snap.length-1;j++){
-  const path=dijkstra(adj,snap[j],snap[j+1]);
-  if(!path){gaps++;add(xy[snap[j]]);add(xy[snap[j+1]]);km+=map.distance(xy[snap[j]],xy[snap[j+1]])/1000;continue}
-  path.forEach(i=>add(xy[i]));
-  for(let k=1;k<path.length;k++)km+=map.distance(xy[path[k-1]],xy[path[k]])/1000;
- }
- return{out,km,gaps};
-}
 /* Nom d’étape automatique : « ville de départ - ville d’arrivée » (Nominatim) */
 let nt;function scheduleNames(){clearTimeout(nt);nt=setTimeout(autoNames,1500)}
 async function place(p){
@@ -329,7 +273,7 @@ function renderList(){
  renderSum();
  $('#list').innerHTML=D.stages.map((s,i)=>`<div class="card ${s.id===sel?'on':''}" data-id="${s.id}">
   <div class="row"><span class="dot" style="background:${COL[i%COL.length]}"></span><input data-f="name" value="${esc(s.name)}"><input type="date" data-f="date" value="${esc(s.date)}"></div>
-  <div class="meta">${dist(s).toFixed(1)} km · ${s.points.length} repère(s) · ${okRoute(s)?(s.routeMode==='gr'?'suit le GR34':'itinéraire à pied'):s.route?'itinéraire à recalculer':'ligne droite'}</div>
+  <div class="meta">${dist(s).toFixed(1)} km · ${s.points.length} repère(s) · ${okRoute(s)?'itinéraire à pied':s.route?'itinéraire à recalculer':'ligne droite'}</div>
   <div class="lodg"><div class="meta">Hébergement</div>
   <input data-l="name" placeholder="Nom" value="${esc((s.lodging||{}).name)}">
   <input data-l="address" placeholder="Adresse" value="${esc((s.lodging||{}).address)}">
@@ -337,7 +281,7 @@ function renderList(){
   <textarea data-f="notes" rows="2" placeholder="Notes : ravitaillement, marées, météo…">${esc(s.notes)}</textarea>
   <details data-id="${s.id}" ${openC.has(s.id)?'open':''}><summary>💬 Discussion (${(s.chat||[]).length})</summary><div class="sc" data-id="${s.id}">${chatHtml(s)}</div>
    <div class="row"><input class="cin" placeholder="Message sur cette étape…"><button class="pri" data-a="csend">Envoyer</button></div></details>
-  <div class="row" style="flex-wrap:wrap"><button data-a="view">Voir</button><button data-a="route">🥾 Calculer l’itinéraire</button><button data-a="auto">Nom auto</button><button data-a="up" aria-label="Monter">↑</button><button data-a="down" aria-label="Descendre">↓</button><button data-a="del" class="danger">Supprimer</button></div>
+  <div class="row" style="flex-wrap:wrap"><button data-a="view">Voir</button><button data-a="route">🥾 Itinéraire à pied</button><button data-a="auto">Nom auto</button><button data-a="up" aria-label="Monter">↑</button><button data-a="down" aria-label="Descendre">↓</button><button data-a="del" class="danger">Supprimer</button></div>
  </div>`).join('')||'<p class="meta">Aucune étape. Ajoutes-en une pour commencer.</p>';
 }
 $('#list').addEventListener('input',e=>{
