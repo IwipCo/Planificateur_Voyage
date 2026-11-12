@@ -39,6 +39,12 @@ main{display:grid;grid-template-rows:42vh 1fr;height:calc(100dvh - 52px)}
 #editbar{display:flex;flex-wrap:wrap;gap:4px;flex-basis:100%}#editbar[hidden]{display:none}
 .ck{display:flex;gap:6px;align-items:center;margin:4px 0}.ck [data-ck=text]{flex:1;min-width:0}.ck select{width:auto;max-width:42%}
 .x.ed{right:6px}
+.seg{display:inline-flex}.seg button{border-radius:0}.seg button:first-child{border-radius:6px 0 0 6px}.seg button:last-child{border-radius:0 6px 6px 0;margin-left:-1px}
+.seg button.on{background:var(--sea);border-color:var(--sea);color:#fff;font-weight:600}
+.tabs button[hidden]{display:none}
+#bcfg.on{background:var(--gorse);border-color:var(--gorse);color:#14262c}
+@media(max-width:560px){#bcfg .lbl{display:none}}
+.poi{width:26px;height:26px;border-radius:50%;background:var(--card);border:2px solid var(--sea);font:15px/22px system-ui;text-align:center;box-shadow:0 0 3px #0006}
 #tdlg .row input[type=date]{width:100%}
 .wp.fl{border-radius:4px}
 #editbar select{width:auto;flex:none;padding:3px 6px;font-size:13px}
@@ -101,6 +107,7 @@ dialog p{font-size:13px;color:var(--mute)}
 <header>
  <button id="bback" aria-label="Retour aux voyages">←</button>
  <input id="title" aria-label="Titre du voyage" readonly>
+ <button id="bcfg" title="Configuration du voyage : nom, dates, participants, onglets…">🛠 <span class="lbl">Config voyage</span></button>
  <span id="st"></span>
  <button id="bset" aria-label="Réglages">⚙</button>
  <button id="bsave" class="pri">Enregistrer</button>
@@ -108,11 +115,11 @@ dialog p{font-size:13px;color:var(--mute)}
 <main>
  <div id="mapwrap">
   <div id="bar">
-   <button id="vall" title="Voir tout le parcours">Tout</button>
-   <button id="vday" title="Voir le jour choisi">Jour</button>
+   <span class="seg" role="group" aria-label="Affichage de la carte"><button id="vall" title="Afficher tous les jours du voyage sur la carte">🗺 Tous les jours</button><button id="vday" title="Afficher uniquement le jour sélectionné">📅 Jour choisi</button></span>
    <button id="bdraw" title="Poser, déplacer ou insérer des points sur la carte">✏ Modifier l’itinéraire</button>
-   <button id="bgr" title="Afficher ou masquer les GR">🟥 GR</button>
+   <button id="bgr" title="Afficher ou masquer les sentiers de grande randonnée (GR…)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align:-3px"><rect x="1.5" y="2" width="13" height="5.5" fill="#fff" stroke="#8a8a8a" stroke-width=".7"/><rect x="1.5" y="7.5" width="13" height="5.5" fill="#d62828" stroke="#8a8a8a" stroke-width=".7"/></svg> Sentiers GR</button>
    <button id="btr" title="Afficher ou masquer les trajets aller / retour">🚆 Trajets</button>
+   <button id="bpoi" title="Points d’intérêt : eau, commerces, camping…">📍 Points</button>
    <div id="editbar" hidden>
     <select id="rmode" title="Mode de calcul de l’itinéraire"><option value="foot">🥾 Piéton</option><option value="car">🚗 Voiture</option></select>
     <button id="bdirect" title="Les prochains points seront reliés en ligne droite, hors chemins">↯ Ligne droite : non</button>
@@ -125,7 +132,7 @@ dialog p{font-size:13px;color:var(--mute)}
   <div id="map"></div>
  </div>
  <div id="panel">
-  <div class="tabs"><button data-t="stages" class="on" title="Jours">Jours</button><button data-t="lodg" title="Hébergements">Héberg.</button><button data-t="recap" title="Récap du voyage">Récap</button><button data-t="budget" title="Budget et remboursements">Budget</button><button data-t="check" title="Checklist">Checklist</button><button data-t="chat" title="Discussion">Chat</button><button data-t="trip" title="Réglages du voyage">Voyage</button></div>
+  <div class="tabs"><button data-t="stages" class="on" title="Jours">Jours</button><button data-t="lodg" title="Hébergements">Héberg.</button><button data-t="recap" title="Récap du voyage">Récap</button><button data-t="budget" title="Budget et remboursements">Budget</button><button data-t="check" title="Checklist">Checklist</button><button data-t="chat" title="Discussion">Chat</button></div>
   <section id="p-stages"><p class="sum" id="sum"></p><div class="row"><button id="bexp">Tout déplier</button><button id="bcol">Tout réduire</button><button id="breorg">⇅ Réorganiser</button></div><div id="list"></div><button id="badd">+ Ajouter un jour</button></section>
   <section id="p-lodg" hidden></section>
   <section id="p-recap" hidden></section>
@@ -135,6 +142,7 @@ dialog p{font-size:13px;color:var(--mute)}
    <label class="lb">Nom du voyage</label><input id="t-name">
    <div class="row"><div class="grow"><label class="lb">Départ</label><input type="date" id="t-start"></div><div class="grow"><label class="lb">Arrivée</label><input type="date" id="t-end"></div></div>
    <label class="lb">Participants (séparés par des virgules)</label><input id="t-parts">
+   <label class="lb">Onglets affichés</label><div id="t-tabs" class="row" style="flex-wrap:wrap"></div>
    <label class="lb">Image de couverture</label><div id="t-cover-prev"></div>
    <div class="row"><input type="file" id="t-cover" accept="image/*"><button id="t-cover-del">Retirer</button></div>
    <p class="meta" id="t-info"></p>
@@ -149,6 +157,31 @@ dialog p{font-size:13px;color:var(--mute)}
  </div>
 </main>
 </div>
+<dialog id="pdlg">
+<div class="dlg-b">
+ <h3 style="margin:0 0 4px">Points d’intérêt</h3>
+ <label class="chk"><input type="checkbox" id="pd-on"> Afficher sur la carte</label>
+ <div class="meta" style="margin-top:8px">Types affichés sur la carte (et recherchés) :</div><div id="pd-cats" class="row" style="flex-wrap:wrap"></div>
+ <div class="row" style="margin-top:10px"><select id="pd-scope"><option value="day">Jour choisi</option><option value="all">Tout le parcours</option></select><select id="pd-r"><option value="200">à 200 m</option><option value="500" selected>à 500 m</option><option value="1000">à 1 km</option></select></div>
+ <button id="pd-search" class="pri">🔍 Chercher le long de l’itinéraire</button>
+ <p class="meta" id="pd-msg"></p>
+ <button id="pd-add">📍 Ajouter un point à la main</button>
+ <p class="meta" id="pd-count"></p>
+ <button id="pd-clear" class="danger">Supprimer les points importés</button>
+ <p class="meta">Les points importés viennent d’OpenStreetMap (© contributeurs), la même base que de nombreuses applis de randonnée et de vélo.</p>
+</div>
+<div class="dlg-f"><button id="pd-x">Fermer</button></div>
+</dialog>
+<dialog id="podlg">
+<div class="dlg-b">
+ <h3 style="margin:0 0 4px">Point d’intérêt</h3>
+ <p class="meta" id="po-info"></p>
+ <label>Nom</label><input id="po-name" placeholder="Ex. Fontaine du bourg">
+ <label>Type</label><select id="po-type"></select>
+ <label>Note</label><textarea id="po-note" rows="3" placeholder="Horaires, potabilité, accès…"></textarea>
+</div>
+<div class="dlg-f"><button id="po-del" class="danger" title="Supprimer ce point">🗑 Supprimer</button><span style="flex:1"></span><button id="po-ok" class="pri">Valider</button><button id="po-x">Fermer</button></div>
+</dialog>
 <dialog id="tdlg">
 <div class="dlg-b">
  <h3 style="margin:0 0 4px">Modifier le voyage</h3>
@@ -219,7 +252,7 @@ async function ghPut(p,obj,sh,msg){
 }
 function norm(d){
  d.stages=d.stages||[];d.messages=d.messages||[];d.participants=Array.isArray(d.participants)&&d.participants.length?d.participants:['Moi'];
- d.start=d.start||'';d.end=d.end||'';d.title=d.title||'';d.transports=d.transports||[];d.homes=d.homes||{};d.checklist=d.checklist||[];d.spend=d.spend||[];d.payments=d.payments||[];
+ d.start=d.start||'';d.end=d.end||'';d.title=d.title||'';d.transports=d.transports||[];d.homes=d.homes||{};d.checklist=d.checklist||[];d.pois=d.pois||[];d.tabsOff=d.tabsOff||[];d.pois.forEach(x=>{if(x.type==='food')x.type='resto'});d.spend=d.spend||[];d.payments=d.payments||[];
  d.stages.forEach(s=>{s.points=Array.isArray(s.points)?s.points:[];const L=s.lodging=s.lodging||{name:'',address:'',price:'',status:'find'};if(!L.status)L.status=L.booked?'booked':'find';delete L.booked;L.nights=L.nights||1});
 }
 function wrap(d){
@@ -352,6 +385,7 @@ function drawMap(fit){
  map.getContainer().style.cursor=draw?'crosshair':'';
 }
 map.on('click',e=>{
+ if(addPoiMode){addPoiMode=false;map.getContainer().style.cursor='';openPoiDlg(null,e.latlng);return}
  if(!draw)return;
  const s=cur();if(!s)return toast('Ajoute d’abord une étape.');
  if(view!=='day'){view='day'}
@@ -424,7 +458,7 @@ setAuto(autoOn,true);
 const grTiles=L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png',{maxZoom:18,opacity:.85,attribution:'Sentiers © <a href="https://hiking.waymarkedtrails.org">Waymarked Trails</a>'});
 let grOn=localStorage.getItem('tp_gr')==='1';
 function setGR(v){grOn=v;localStorage.setItem('tp_gr',v?'1':'0');if(v)grTiles.addTo(map);else map.removeLayer(grTiles);
- const b=$('#bgr');b.classList.toggle('on',v);b.textContent='🟥 GR'}
+ const b=$('#bgr');b.classList.toggle('on',v)}
 $('#bgr').onclick=()=>setGR(!grOn);
 /* Nom d’étape automatique : « ville de départ - ville d’arrivée » (Nominatim) */
 let nt;function scheduleNames(){clearTimeout(nt);nt=setTimeout(autoNames,1500)}
@@ -477,9 +511,9 @@ function samples(s){
  }
  return out;
 }
-async function fetchT(u,ms=12000){
+async function fetchT(u,ms=12000,init={}){
  const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);
- try{return await fetch(u,{signal:c.signal})}finally{clearTimeout(t)}
+ try{return await fetch(u,{...init,signal:c.signal})}finally{clearTimeout(t)}
 }
 const ll=c=>c.map(p=>p.la.toFixed(5)+','+p.lo.toFixed(5));
 const EL_PROV=[
@@ -592,7 +626,7 @@ const forList=L=>{const f=(L.for||[]).filter(x=>D.participants.includes(x));retu
 const hdTxt=(s,i)=>`<b>J${i+1} · ${esc(s.name)}</b><span class="meta">${fmtD(s.date)||'date ?'} · ${dist(s).toFixed(1)} km${s.elev?' · ↗ '+s.elev.up+' m':''}</span>`;
 const body=s=>{const L=lodgOf(s);return `<div class="bd">
  <div class="row"><input data-f="name" value="${esc(s.name)}"><input type="date" data-f="date" value="${esc(s.date)}"></div>
- <div class="meta">${s.points.length} repère(s) · ${okRoute(s)?(s.rmode==='car'?'itinéraire en voiture':'itinéraire à pied'):s.route?'itinéraire à recalculer':'ligne droite'}</div>${elevHtml(s)}
+ <div class="meta">${s.points.length} repère(s) · ${okRoute(s)?(s.rmode==='car'?'itinéraire en voiture':'itinéraire à pied'):s.route?'itinéraire à recalculer':'ligne droite'}</div>${elevHtml(s)}${poiLine(s)}
  <details data-k="l" data-id="${s.id}" ${openC.has('l'+s.id)?'open':''}><summary>Hébergement ${chip(s,0)}</summary><div class="lodg">
   <input data-l="name" placeholder="Nom de l’hébergement" value="${esc(L.name)}">
   <input data-l="address" placeholder="Adresse" value="${esc(L.address)}">
@@ -932,7 +966,7 @@ function renderRecap(){
   h+='<div class="sec"><span>Statistiques</span></div><div class="stats">'+t+'</div>';
   if(E.length<A.length)h+=`<p class="meta">Dénivelé calculé pour ${E.length} jour(s) sur ${A.length}.</p>`;
  }
- h+=profAll();
+ h+=profAll()+poiRecapHtml();
  el.innerHTML=h;
 }
 /* ---------- Trajets sur la carte (à vol d’oiseau) ---------- */
@@ -988,6 +1022,160 @@ function setTr(v){
  drawTrans();geoTrans(true);
 }
 $('#btr').onclick=()=>setTr(!trOn);
+/* ---------- Points d'intérêt (eau, commerces…) ---------- */
+const POI_T={
+ water:{e:'💧',l:'Points d’eau',q:['["amenity"="drinking_water"]','["natural"="spring"]','["man_made"="water_tap"]','["amenity"="water_point"]']},
+ camp:{e:'⛺',l:'Campings',q:['["tourism"="camp_site"]']},
+ shelter:{e:'🛖',l:'Abris et refuges',q:['["amenity"="shelter"]','["tourism"~"^(wilderness_hut|alpine_hut)$"]']},
+ gite:{e:'🏡',l:'Gîtes et auberges',q:['["tourism"~"^(chalet|apartment|hostel)$"]']},
+ bnb:{e:'🛏️',l:'Chambres d’hôtes',q:['["tourism"="guest_house"]']},
+ hotel:{e:'🏨',l:'Hôtels',q:['["tourism"~"^(hotel|motel)$"]']},
+ wc:{e:'🚻',l:'Toilettes',q:['["amenity"="toilets"]']},
+ bar:{e:'🍺',l:'Bars et cafés',q:['["amenity"~"^(bar|pub|cafe)$"]']},
+ resto:{e:'🍴',l:'Restaurants',q:['["amenity"~"^(restaurant|fast_food)$"]']},
+ shop:{e:'🛒',l:'Commerces',q:['["shop"~"^(supermarket|convenience|bakery|butcher|greengrocer|general)$"]']},
+ view:{e:'📷',l:'Points de vue'},danger:{e:'⚠️',l:'Passages difficiles'},other:{e:'📍',l:'Autres'}
+};
+let poiOn=localStorage.getItem('tp_poi')!=='0',addPoiMode=false,PE=null;
+const poiShow=Object.assign({water:1,camp:1,shelter:1,gite:1,bnb:1,hotel:1,wc:1,bar:1,resto:1,shop:1,view:1,danger:1,other:1},JSON.parse(localStorage.getItem('tp_poishow')||'{}'));
+const poiLayer=L.layerGroup().addTo(map);
+$('#po-type').innerHTML=Object.entries(POI_T).map(([k,t])=>`<option value="${k}">${t.e} ${t.l}</option>`).join('');
+function poiType(t){
+ if(t.amenity==='drinking_water'||t.natural==='spring'||t.man_made==='water_tap'||t.amenity==='water_point')return'water';
+ if(t.tourism==='camp_site')return'camp';
+ if(t.amenity==='shelter'||['wilderness_hut','alpine_hut'].includes(t.tourism))return'shelter';
+ if(['chalet','apartment','hostel'].includes(t.tourism))return'gite';
+ if(t.tourism==='guest_house')return'bnb';
+ if(['hotel','motel'].includes(t.tourism))return'hotel';
+ if(t.amenity==='toilets')return'wc';
+ if(['bar','pub','cafe'].includes(t.amenity))return'bar';
+ if(['restaurant','fast_food'].includes(t.amenity))return'resto';
+ if(t.shop)return'shop';
+ return'other';
+}
+function proj(line,p){
+ const k=Math.cos(p[0]*Math.PI/180),X=q=>(q[1]-p[1])*k*111320,Y=q=>(q[0]-p[0])*110540;
+ let best=1e12,bk=0,cum=0;
+ for(let i=1;i<line.length;i++){
+  const ax=X(line[i-1]),ay=Y(line[i-1]),dx=X(line[i])-ax,dy=Y(line[i])-ay,L2=dx*dx+dy*dy;
+  const t=L2?Math.max(0,Math.min(1,-(ax*dx+ay*dy)/L2)):0,d=Math.hypot(ax+t*dx,ay+t*dy);
+  if(d<best){best=d;bk=cum+t*Math.sqrt(L2)}
+  cum+=Math.sqrt(L2);
+ }
+ return{d:best,km:bk/1000};
+}
+function locate(lat,lng){
+ let best=null;
+ D.stages.forEach(s=>{if(s.points.length<2)return;const pr=proj(okRoute(s)?s.route:s.points,[lat,lng]);if(!best||pr.d<best.off)best={sid:s.id,km:+pr.km.toFixed(2),off:Math.round(pr.d)}});
+ return best&&best.off<=1500?best:null;
+}
+function drawPois(){
+ poiLayer.clearLayers();if(!poiOn)return;
+ (D.pois||[]).forEach(x=>{
+  if(!poiShow[x.type])return;
+  const t=POI_T[x.type]||POI_T.other,j=D.stages.findIndex(s=>s.id===x.sid);
+  const m=L.marker([x.lat,x.lng],{icon:L.divIcon({className:'',iconSize:[26,26],html:`<div class="poi">${t.e}</div>`})}).addTo(poiLayer);
+  const box=document.createElement('div');
+  box.innerHTML=`<b>${esc(x.name||t.l)}</b><br><span class="meta">${t.l}${j>=0?' · J'+(j+1)+' · km '+x.km+' · à '+x.off+' m':''}</span>${x.note?'<br>'+esc(x.note):''}${x.src==='osm'?'<br><span class="meta">© OpenStreetMap</span>':''}<br>`;
+  const b=document.createElement('button');b.textContent='✏ Modifier';b.onclick=()=>{map.closePopup();openPoiDlg(x.id)};box.appendChild(b);
+  m.bindPopup(box);
+ });
+}
+const poiLine=s=>{
+ const c={};(D.pois||[]).filter(x=>x.sid===s.id).forEach(x=>c[x.type]=(c[x.type]||0)+1);
+ const k=Object.keys(c);return k.length?`<div class="meta">${k.map(t=>(POI_T[t]||POI_T.other).e+' '+c[t]).join(' · ')} le long du tracé</div>`:'';
+};
+function poiRecapHtml(){
+ const P=D.pois||[];if(!P.length)return'';
+ const cnt={};P.forEach(x=>cnt[x.type]=(cnt[x.type]||0)+1);
+ let h='<div class="sec"><span>Points d’intérêt</span></div><p class="meta">'+Object.entries(cnt).map(([k,n])=>(POI_T[k]||POI_T.other).e+' '+n).join(' · ')+'</p>';
+ if(P.some(x=>x.type==='water')){
+  const W=[];
+  D.stages.forEach((s,i)=>{if(s.points.length<2)return;const L=dist(s),ws=P.filter(x=>x.type==='water'&&x.sid===s.id).map(x=>x.km).sort((a,b)=>a-b),pts=[0,...ws,L];let g=0;for(let j=1;j<pts.length;j++)g=Math.max(g,pts[j]-pts[j-1]);W.push({i,g,n:ws.length})});
+  if(W.length)h+='<table class="rc"><tr><th>Jour</th><th>💧</th><th>Plus long sans eau</th></tr>'+W.map(x=>`<tr><td>J${x.i+1}</td><td>${x.n}</td><td>${x.g.toFixed(1)} km</td></tr>`).join('')+'</table><p class="meta">Calculé d’après les points d’eau enregistrés le long de chaque tracé.</p>';
+ }
+ return h;
+}
+async function overpassQ(q){
+ const errs=[];
+ for(const u of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter']){
+  try{
+   const r=await fetchT(u,50000,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)});
+   if(!r.ok){errs.push(u.split('/')[2]+' : '+r.status);continue}
+   return await r.json();
+  }catch(e){errs.push(u.split('/')[2]+' : '+(e.name==='AbortError'?'délai dépassé':e.message))}
+ }
+ throw new Error(errs.join(' · '));
+}
+function poiQuery(cats,R,line){
+ const pts=[];let acc=0,prev=null;
+ line.forEach((p,i)=>{if(!prev){pts.push(p);prev=p;return}acc+=map.distance(prev,p);prev=p;if(acc>=250||i===line.length-1){pts.push(p);acc=0}});
+ let sel=pts;if(sel.length>150){const st=Math.ceil(sel.length/150);sel=sel.filter((_,i)=>i%st===0||i===sel.length-1)}
+ const la=line.map(p=>p[0]),lo=line.map(p=>p[1]),pad=R/111000+0.003;
+ const bb=[Math.min(...la)-pad,Math.min(...lo)-pad,Math.max(...la)+pad,Math.max(...lo)+pad].map(v=>v.toFixed(5)).join(',');
+ const f=cats.map(c=>POI_T[c].q.map(x=>'nwr'+x+';').join('')).join('');
+ return '[out:json][timeout:40][bbox:'+bb+'];('+f+')->.c;nwr.c(around:'+R+','+sel.map(p=>p[0].toFixed(5)+','+p[1].toFixed(5)).join(',')+');out center tags;';
+}
+async function searchPois(){
+ const msg=$('#pd-msg'),btn=$('#pd-search');
+ const cats=Object.keys(POI_T).filter(k=>poiShow[k]&&POI_T[k].q);
+ if(!cats.length){msg.textContent='Coche au moins un type à rechercher (eau, commerces…).';return}
+ const R=+$('#pd-r').value,st=($('#pd-scope').value==='day'?[cur()]:D.stages).filter(x=>x&&x.points.length>1);
+ if(!st.length){msg.textContent='Trace d’abord un itinéraire (au moins 2 repères sur le jour).';return}
+ btn.disabled=true;let added=0;
+ try{
+  for(let k=0;k<st.length;k++){
+   const s=st[k],line=okRoute(s)?s.route:s.points;
+   msg.textContent='Recherche '+(k+1)+'/'+st.length+' (J'+(D.stages.indexOf(s)+1)+')…';
+   const j=await overpassQ(poiQuery(cats,R,line));
+   (j.elements||[]).forEach(el=>{
+    const t=el.tags||{};if(t.drinking_water==='no')return;
+    const lat=el.lat!=null?el.lat:(el.center&&el.center.lat),lng=el.lon!=null?el.lon:(el.center&&el.center.lon);
+    if(lat==null||lng==null)return;
+    const osm=el.type+'/'+el.id;if(D.pois.some(x=>x.osm===osm))return;
+    const pr=proj(line,[lat,lng]);if(pr.d>R+30)return;
+    D.pois.push({id:'o'+el.type[0]+el.id,type:poiType(t),name:t.name||'',lat:+(+lat).toFixed(5),lng:+(+lng).toFixed(5),note:t.opening_hours?'Horaires : '+t.opening_hours:'',src:'osm',osm,sid:s.id,km:+pr.km.toFixed(2),off:Math.round(pr.d)});
+    added++;
+   });
+   if(k<st.length-1)await sleep(1500);
+  }
+  msg.textContent=added+' nouveau(x) point(s) trouvé(s).';
+  if(added){changed();drawPois();renderList()}
+ }catch(e){msg.textContent='Recherche impossible : '+em(e)}
+ btn.disabled=false;updPoiCount();
+}
+function updPoiCount(){const n=D.pois.length,o=D.pois.filter(x=>x.src==='osm').length;$('#pd-count').textContent=n+' point(s) enregistré(s) dont '+o+' importé(s).'}
+function openPoiMgr(){
+ $('#pd-on').checked=poiOn;
+ $('#pd-cats').innerHTML=Object.entries(POI_T).map(([k,t])=>`<label class="chk"><input type="checkbox" data-pc="${k}" ${poiShow[k]?'checked':''}>${t.e} ${t.l}</label>`).join('');
+ $('#pd-msg').textContent='';updPoiCount();$('#pdlg').showModal();
+}
+$('#bpoi').onclick=openPoiMgr;
+$('#pd-x').onclick=()=>$('#pdlg').close();
+$('#pd-on').onchange=e=>{poiOn=e.target.checked;localStorage.setItem('tp_poi',poiOn?'1':'0');drawPois()};
+$('#pd-cats').addEventListener('change',e=>{const k=e.target.dataset.pc;if(!k)return;poiShow[k]=e.target.checked?1:0;localStorage.setItem('tp_poishow',JSON.stringify(poiShow));drawPois()});
+$('#pd-search').onclick=searchPois;
+$('#pd-add').onclick=()=>{$('#pdlg').close();addPoiMode=true;map.getContainer().style.cursor='crosshair';toast('Touche la carte à l’endroit du point.')};
+$('#pd-clear').onclick=()=>{if(!confirm('Supprimer tous les points importés d’OpenStreetMap ? (tes points ajoutés à la main sont conservés)'))return;D.pois=D.pois.filter(x=>x.src!=='osm');changed();drawPois();renderList();updPoiCount()};
+function openPoiDlg(id,ll){
+ if(id){const x=D.pois.find(v=>v.id===id);if(!x)return;PE={obj:x,isNew:false}}
+ else{
+  const t={id:'p'+Date.now().toString(36),type:'water',name:'',lat:+ll.lat.toFixed(5),lng:+ll.lng.toFixed(5),note:'',src:'me'};
+  const lc=locate(t.lat,t.lng);if(lc){t.sid=lc.sid;t.km=lc.km;t.off=lc.off}
+  PE={obj:t,isNew:true};
+ }
+ const x=PE.obj,j=D.stages.findIndex(v=>v.id===x.sid);
+ $('#po-name').value=x.name||'';$('#po-type').value=x.type;$('#po-note').value=x.note||'';
+ $('#po-info').textContent=(x.src==='osm'?'Source : OpenStreetMap':'Ajouté à la main')+(j>=0?' · J'+(j+1)+' · km '+x.km+' · à '+x.off+' m de l’itinéraire':'');
+ $('#po-del').hidden=PE.isNew;$('#podlg').showModal();
+}
+$('#po-x').onclick=()=>$('#podlg').close();
+$('#po-ok').onclick=()=>{
+ const x=PE.obj;x.name=$('#po-name').value.trim();x.type=$('#po-type').value;x.note=$('#po-note').value.trim();
+ if(PE.isNew)D.pois.push(x);
+ changed();drawPois();renderList();$('#podlg').close();
+};
+$('#po-del').onclick=()=>{if(!confirm('Supprimer ce point ?'))return;D.pois=D.pois.filter(v=>v!==PE.obj);changed();drawPois();renderList();$('#podlg').close()};
 /* ---------- Accueil & navigation ---------- */
 let pendingTab=null;
 const hue=id=>{let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))%360;return h};
@@ -1054,7 +1242,7 @@ function openTrip(id){
  if(!t){toast('Voyage introuvable.');location.hash='';return}
  curId=id;D=t;norm(D);
  openS.clear();openC.clear();openT.clear();sel=D.stages[0]&&D.stages[0].id;view='all';draw=false;
- $('#home').hidden=true;$('#trip').hidden=false;map.invalidateSize();renderAll(true);
+ $('#home').hidden=true;$('#trip').hidden=false;map.invalidateSize();showTab('stages');renderAll(true);
  status(hasGh()?(dirty?'● Non enregistré':''):'Lecture seule : token à régler (⚙)');
  if(pendingTab){const tb=document.querySelector('.tabs [data-t='+pendingTab+']');pendingTab=null;if(tb)tb.click()}
  autoFill();
@@ -1082,10 +1270,19 @@ async function delTripById(id){
 }
 $('#t-del').onclick=()=>delTripById(curId);
 /* ---------- Réglages & onglets ---------- */
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
- document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
- ['stages','lodg','recap','budget','check','chat','trip'].forEach(t=>$('#p-'+t).hidden=b.dataset.t!==t);renderLodg();renderRecap();renderBudget();renderCheck();renderTrip();
-});
+function showTab(t){
+ document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
+ $('#bcfg').classList.toggle('on',t==='trip');
+ ['stages','lodg','recap','budget','check','chat','trip'].forEach(k=>$('#p-'+k).hidden=t!==k);
+ renderLodg();renderRecap();renderBudget();renderCheck();renderTrip();
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+$('#bcfg').onclick=()=>showTab($('#p-trip').hidden?'trip':'stages');
+const OPT_TABS=[['lodg','Hébergement'],['recap','Récap'],['budget','Budget'],['check','Checklist'],['chat','Discussion']];
+function applyTabs(){
+ OPT_TABS.forEach(([k])=>{const b=document.querySelector('.tabs [data-t='+k+']');if(b)b.hidden=D.tabsOff.includes(k)});
+ const act=document.querySelector('.tabs button.on');if(act&&act.hidden)showTab('stages');
+}
 function openSet(){
  $('#c-for').value='';$('#c-url').value='';$('#c-me').value=C.me||'';
  ['owner','repo','branch','path','token'].forEach(k=>$('#c-'+k).value=C[k]||'');
@@ -1112,6 +1309,7 @@ $('#c-ok').onclick=()=>{
  (async()=>{if(!curId){try{await loadAll()}catch(e){}renderHome()}else renderChat()})();
 };
 function renderTrip(){
+ $('#t-tabs').innerHTML=OPT_TABS.map(([k,l])=>`<label class="chk"><input type="checkbox" data-tab="${k}" ${D.tabsOff.includes(k)?'':'checked'}>${l}</label>`).join('');
  $('#t-name').value=D.title||'';$('#t-cover-prev').innerHTML=D.cover?`<img class="cvp" src="${esc(D.cover)}" alt="">`:'';$('#t-start').value=D.start||'';$('#t-end').value=D.end||'';$('#t-parts').value=D.participants.join(', ');
  const n=nightsList().length;$('#t-info').textContent=n?`${n+1} jours, ${n} nuits.`:'Renseigne les dates pour calculer la durée.';
 }
@@ -1130,7 +1328,8 @@ $('#t-fill').onclick=()=>{
  if(!D.start)return toast('Renseigne d’abord la date de départ.');
  D.stages.forEach((s,i)=>{if(!s.date)s.date=addD(D.start,i)});changed();renderList();
 };
-$('#title').onclick=()=>document.querySelector('.tabs [data-t=trip]').click();
+$('#title').onclick=()=>showTab('trip');
+$('#t-tabs').addEventListener('change',e=>{const k=e.target.dataset.tab;if(!k)return;D.tabsOff=D.tabsOff.filter(x=>x!==k);if(!e.target.checked)D.tabsOff.push(k);changed();applyTabs()});
 function resizeImg(file,maxW=640){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,maxW/im.width),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};im.onerror=rej;im.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
 $('#t-cover').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{D.cover=await resizeImg(f);changed();renderTrip()}catch(x){toast('Image illisible.')}e.target.value=''});
 $('#t-cover-del').onclick=()=>{delete D.cover;changed();renderTrip()};
@@ -1139,7 +1338,7 @@ addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='
 
 function renderAll(fit){
  const run=f=>{try{f()}catch(e){console.error(e);toast('Erreur d’affichage : '+em(e))}};
- run(()=>{$('#title').value=D.title;document.title=D.title});run(renderList);run(renderChat);run(renderTrip);run(renderRecap);run(renderBudget);run(renderCheck);run(()=>drawMap(fit));run(drawTrans);run(()=>geoTrans());
+ run(()=>{$('#title').value=D.title;document.title=D.title});run(renderList);run(renderChat);run(renderTrip);run(renderRecap);run(renderBudget);run(renderCheck);run(()=>drawMap(fit));run(drawTrans);run(drawPois);run(applyTabs);run(()=>geoTrans());
 }
 (async()=>{
  setGR(grOn);
