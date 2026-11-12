@@ -38,7 +38,8 @@ main{display:grid;grid-template-rows:42vh 1fr;height:calc(100dvh - 52px)}
 .tabs{position:sticky;top:0;z-index:6;background:var(--bg);display:flex;flex-wrap:wrap;gap:4px;padding:8px 0 6px;margin:-10px 0 6px}.tabs button{flex:1 1 auto;padding:5px 4px;font-size:12.5px}
 #editbar{display:flex;flex-wrap:wrap;gap:4px;flex-basis:100%}#editbar[hidden]{display:none}
 .ck{display:flex;gap:6px;align-items:center;margin:4px 0}.ck [data-ck=text]{flex:1;min-width:0}.ck select{width:auto;max-width:42%}
-.x.ed{right:38px}
+.x.ed{right:6px}
+#tdlg .row input[type=date]{width:100%}
 .wp.fl{border-radius:4px}
 #editbar select{width:auto;flex:none;padding:3px 6px;font-size:13px}
 .tmk{width:24px;height:24px;border-radius:50%;background:var(--card);border:2px solid;font:14px/20px system-ui;text-align:center}
@@ -117,7 +118,7 @@ dialog p{font-size:13px;color:var(--mute)}
     <button id="bdirect" title="Les prochains points seront reliés en ligne droite, hors chemins">↯ Ligne droite : non</button>
     <button id="bauto" title="Calcul automatique de l’itinéraire et du dénivélé">⚡ Auto : oui</button>
     <button id="broute" title="Calculer l’itinéraire à pied du jour choisi">🥾 Calculer l’itinéraire</button>
-    <button id="bundo" title="Retirer le dernier point posé">✕ Annuler le dernier point</button>
+    <button id="bundo" title="Annuler la dernière modification des points (point posé, déplacé, supprimé…)">✕ Annuler le dernier point</button>
    </div>
   </div>
   <div id="map"></div>
@@ -147,6 +148,18 @@ dialog p{font-size:13px;color:var(--mute)}
  </div>
 </main>
 </div>
+<dialog id="tdlg">
+<div class="dlg-b">
+ <h3 style="margin:0 0 4px">Modifier le voyage</h3>
+ <p class="meta" id="td-info"></p>
+ <label>Nom du voyage</label><input id="td-name">
+ <div class="row"><div class="grow"><label>Départ</label><input type="date" id="td-start"></div><div class="grow"><label>Arrivée</label><input type="date" id="td-end"></div></div>
+ <label>Participants (séparés par des virgules)</label><input id="td-parts">
+ <label>Image de couverture</label><div id="td-cover-prev"></div>
+ <div class="row"><input type="file" id="td-cover" accept="image/*"><button id="td-cover-del">Retirer</button></div>
+</div>
+<div class="dlg-f"><button id="td-del" class="danger" title="Supprimer ce voyage">🗑 Supprimer</button><span style="flex:1"></span><button id="td-ok" class="pri">Valider</button><button id="td-x">Fermer</button></div>
+</dialog>
 <dialog id="dlg">
 <div class="dlg-b">
  <h3 style="margin:0 0 4px">Réglages</h3>
@@ -314,17 +327,17 @@ function drawMap(fit){
   }else{
    s.points.forEach((p,j)=>{
     const m=L.marker(p,{draggable:true,icon:L.divIcon({className:'',iconSize:[22,22],html:`<div class="wp${p[2]?' fl':''}" style="background:${col}">${j+1}</div>`})}).addTo(layer);
-    m.on('dragend',e=>{const l=e.target.getLatLng();s.points[j]=[+l.lat.toFixed(5),+l.lng.toFixed(5),...(s.points[j][2]?[1]:[])];changed();autoRoute(s);drawMap();renderList()});
+    m.on('dragend',e=>{pushUndo(s);const l=e.target.getLatLng();s.points[j]=[+l.lat.toFixed(5),+l.lng.toFixed(5),...(s.points[j][2]?[1]:[])];changed();autoRoute(s);drawMap();renderList()});
     const box=document.createElement('div');box.style.cssText='display:flex;flex-direction:column;gap:6px';
     if(j>0){const t=document.createElement('button');t.textContent=p[2]?'Tronçon précédent : suivre les chemins':'Tronçon précédent : ligne droite';
-     t.onclick=()=>{s.points[j]=p[2]?[p[0],p[1]]:[p[0],p[1],1];map.closePopup();changed();autoRoute(s);drawMap();renderList()};box.appendChild(t)}
+     t.onclick=()=>{pushUndo(s);s.points[j]=p[2]?[p[0],p[1]]:[p[0],p[1],1];map.closePopup();changed();autoRoute(s);drawMap();renderList()};box.appendChild(t)}
     const b=document.createElement('button');b.textContent='Supprimer ce point';b.className='danger';
-    b.onclick=()=>{s.points.splice(j,1);map.closePopup();changed();autoRoute(s);drawMap();renderList()};
+    b.onclick=()=>{pushUndo(s);s.points.splice(j,1);map.closePopup();changed();autoRoute(s);drawMap();renderList()};
     box.appendChild(b);m.bindPopup(box);
    });
    if(draw)for(let j=0;j<s.points.length-1;j++){
     const a=s.points[j],c=s.points[j+1],mid=L.latLng((a[0]+c[0])/2,(a[1]+c[1])/2);
-    const ins=ll=>{s.points.splice(j+1,0,[+ll.lat.toFixed(5),+ll.lng.toFixed(5),...(s.points[j+1][2]?[1]:[])]);changed();autoRoute(s);drawMap();renderList()};
+    const ins=ll=>{pushUndo(s);s.points.splice(j+1,0,[+ll.lat.toFixed(5),+ll.lng.toFixed(5),...(s.points[j+1][2]?[1]:[])]);changed();autoRoute(s);drawMap();renderList()};
     const h=L.marker(mid,{draggable:true,icon:L.divIcon({className:'',iconSize:[22,22],html:'<div class="mid">+</div>'})}).addTo(layer);
     h.on('click',()=>ins(mid));h.on('dragend',e=>ins(e.target.getLatLng()));
    }
@@ -341,7 +354,7 @@ map.on('click',e=>{
  if(!draw)return;
  const s=cur();if(!s)return toast('Ajoute d’abord une étape.');
  if(view!=='day'){view='day'}
- s.points.push([+e.latlng.lat.toFixed(5),+e.latlng.lng.toFixed(5),...(directNext&&s.points.length?[1]:[])]);
+ pushUndo(s);s.points.push([+e.latlng.lat.toFixed(5),+e.latlng.lng.toFixed(5),...(directNext&&s.points.length?[1]:[])]);
  changed();autoRoute(s);drawMap();renderList();
 });
 let directNext=false;
@@ -433,7 +446,14 @@ async function autoNames(){
   await sleep(1100);
  }
 }
-$('#bundo').onclick=()=>{const s=cur();if(s&&s.points.length){s.points.pop();changed();autoRoute(s);drawMap();renderList()}};
+const UNDO={};
+function pushUndo(s){const u=UNDO[s.id]=UNDO[s.id]||[];u.push(JSON.stringify(s.points));if(u.length>50)u.shift()}
+$('#bundo').onclick=()=>{
+ const s=cur();if(!s)return;
+ const u=UNDO[s.id];
+ if(!u||!u.length)return toast('Rien à annuler.');
+ s.points=JSON.parse(u.pop());changed();autoRoute(s);drawMap();renderList();
+};
 
 /* ---------- Étapes ---------- */
 const openC=new Set();
@@ -964,7 +984,7 @@ function renderHome(){
  $('#hmsg').innerHTML=(loadErr?`<p style="padding:0 14px"><span class="chip warn">⚠ ${esc(loadErr)}</span></p>`:'')+(hasGh()?'':'<p class="meta" style="padding:0 14px">Lecture seule : renseigne le token (⚙) pour créer et modifier des voyages.</p>');
  const km=t=>Math.round((t.stages||[]).reduce((a,s)=>a+((s.points&&s.points.length>1)?dist(s):0),0));
  const ts=[...ALL.trips].sort((a,b)=>(b.start||'9999').localeCompare(a.start||'9999'));
- $('#cards').innerHTML=ts.map(m=>{const [lb,cl]=tripStatus(m),k=km(m),h=hue(m.id);return `<div class="tc" data-id="${esc(m.id)}"><button class="x ed" data-edit="${esc(m.id)}" aria-label="Modifier ce voyage" title="Modifier ce voyage">✏️</button><button class="x" data-del="${esc(m.id)}" aria-label="Supprimer ce voyage" title="Supprimer ce voyage">🗑</button>${m.cover?`<img class="cv" alt="" src="${esc(m.cover)}">`:`<div class="band" style="background:linear-gradient(135deg,hsl(${h} 55% 45%),hsl(${(h+40)%360} 55% 32%))">🥾</div>`}<div class="tb"><b>${esc(m.title||'Sans nom')}</b>
+ $('#cards').innerHTML=ts.map(m=>{const [lb,cl]=tripStatus(m),k=km(m),h=hue(m.id);return `<div class="tc" data-id="${esc(m.id)}"><button class="x ed" data-edit="${esc(m.id)}" aria-label="Modifier ce voyage" title="Modifier ce voyage">✏️</button>${m.cover?`<img class="cv" alt="" src="${esc(m.cover)}">`:`<div class="band" style="background:linear-gradient(135deg,hsl(${h} 55% 45%),hsl(${(h+40)%360} 55% 32%))">🥾</div>`}<div class="tb"><b>${esc(m.title||'Sans nom')}</b>
   <div class="meta">${m.start?fmtY(m.start)+(m.end?' → '+fmtY(m.end):''):'Dates à définir'}</div>
   <div class="meta">${(m.stages||[]).length} jour(s)${k?' · '+k+' km':''}</div>
   <div class="meta">👥 ${esc((m.participants||[]).join(', '))}</div><div><span class="chip ${cl}">${lb}</span></div></div></div>`}).join('')+'<div class="tc new" id="tnew"><div class="tb"><b>＋ Nouveau voyage</b></div></div>';
@@ -975,11 +995,34 @@ function pickTrip(){
  return run||T.filter(x=>x.start>t).sort((a,b)=>a.start.localeCompare(b.start))[0];
 }
 $('#cards').addEventListener('click',e=>{
- const ex=e.target.closest('[data-edit]');if(ex){e.stopPropagation();pendingTab='trip';location.hash='#t='+ex.dataset.edit;return}
+ const ex=e.target.closest('[data-edit]');if(ex){e.stopPropagation();openTripDlg(ex.dataset.edit);return}
  const dx=e.target.closest('[data-del]');if(dx){e.stopPropagation();return delTripById(dx.dataset.del)}
  if(e.target.closest('#tnew'))return newTrip();
  const c=e.target.closest('.tc[data-id]');if(c)location.hash='#t='+c.dataset.id;
 });
+let ET=null,ETcover;
+const drawCoverPrev=()=>{$('#td-cover-prev').innerHTML=ETcover?`<img class="cvp" src="${esc(ETcover)}" alt="">`:''};
+function openTripDlg(id){
+ const t=ALL.trips.find(x=>x.id===id);if(!t)return;
+ ET=t;ETcover=t.cover;
+ const km=Math.round((t.stages||[]).reduce((a,s)=>a+((s.points&&s.points.length>1)?dist(s):0),0));
+ $('#td-name').value=t.title||'';$('#td-start').value=t.start||'';$('#td-end').value=t.end||'';$('#td-parts').value=(t.participants||[]).join(', ');
+ $('#td-info').textContent=`${(t.stages||[]).length} jour(s)${km?' · '+km+' km':''} · ${tripStatus(t)[0]}`;
+ drawCoverPrev();$('#tdlg').showModal();
+}
+$('#td-cover').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{ETcover=await resizeImg(f);drawCoverPrev()}catch(x){toast('Image illisible.')}e.target.value=''});
+$('#td-cover-del').onclick=()=>{ETcover=undefined;drawCoverPrev()};
+$('#td-x').onclick=()=>$('#tdlg').close();
+$('#td-del').onclick=()=>{const id=ET&&ET.id;$('#tdlg').close();if(id)delTripById(id)};
+$('#td-ok').onclick=async()=>{
+ const st=$('#td-start').value,en=$('#td-end').value,p=$('#td-parts').value.split(',').map(x=>x.trim()).filter(Boolean);
+ if(!p.length)return toast('Il faut au moins un participant.');
+ if(st&&en&&en<st)return toast('La date d’arrivée précède le départ.');
+ if(!hasGh())return toast('Renseigne le token (⚙) pour enregistrer.');
+ ET.title=$('#td-name').value.trim()||ET.title;ET.start=st;ET.end=en;ET.participants=p;
+ if(ETcover)ET.cover=ETcover;else delete ET.cover;
+ touched.add(ET.id);dirty=true;$('#tdlg').close();renderHome();await save();renderHome();
+};
 async function newTrip(){
  if(!hasGh()){toast('Renseigne le token (⚙) pour créer un voyage.');return openSet()}
  const name=(prompt('Nom du voyage ?')||'').trim();if(!name)return;
