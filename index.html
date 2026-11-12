@@ -34,8 +34,8 @@ main{display:grid;grid-template-rows:42vh 1fr;height:calc(100dvh - 52px)}
 #bar button{white-space:nowrap;padding:3px 8px;font-size:13px}
 #mapwrap,#panel{min-width:0}
 #map{flex:1;min-height:0}
-#panel{overflow:auto;padding:10px 12px;min-height:0}
-.tabs{position:sticky;top:0;z-index:6;background:var(--bg);display:flex;flex-wrap:wrap;gap:4px;padding:8px 0 6px;margin:-10px 0 6px}.tabs button{flex:1 1 auto;padding:5px 4px;font-size:12.5px}
+#panel{overflow:auto;padding:0 12px 10px;min-height:0}
+.tabs{position:sticky;top:0;z-index:6;background:var(--bg);display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px 6px;margin:0 -12px 6px;border-bottom:1px solid var(--line)}.tabs button{flex:1 1 auto;padding:5px 4px;font-size:12.5px}
 #editbar{display:flex;flex-wrap:wrap;gap:4px;flex-basis:100%}#editbar[hidden]{display:none}
 .ck{display:flex;gap:6px;align-items:center;margin:4px 0}.ck [data-ck=text]{flex:1;min-width:0}.ck select{width:auto;max-width:42%}
 .x.ed{right:6px}
@@ -118,6 +118,7 @@ dialog p{font-size:13px;color:var(--mute)}
     <button id="bdirect" title="Les prochains points seront reliés en ligne droite, hors chemins">↯ Ligne droite : non</button>
     <button id="bauto" title="Calcul automatique de l’itinéraire et du dénivélé">⚡ Auto : oui</button>
     <button id="broute" title="Calculer l’itinéraire à pied du jour choisi">🥾 Calculer l’itinéraire</button>
+    <button id="belev" title="Recalculer le dénivelé et le profil d’altitude du jour choisi">📈 Update profil</button>
     <button id="bundo" title="Annuler la dernière modification des points (point posé, déplacé, supprimé…)">✕ Annuler le dernier point</button>
    </div>
   </div>
@@ -365,7 +366,7 @@ $('#vday').onclick=()=>{view='day';drawMap(true)};
 $('#bdraw').onclick=()=>{draw=!draw;if(draw)view='day';drawMap();if(draw)toast('Touche la carte pour ajouter des points, ou un « + » entre deux points pour en insérer un.')};
 /* Itinéraire à pied : routage OSM (FOSSGIS), par blocs de 20 repères */
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const rtTok=new Map(),elBusy=new Set(),tried=new Set(),warned=new Set();
+const rtTok=new Map(),elBusy=new Map(),tried=new Set(),warned=new Set();
 const warnOnce=(k,m)=>{if(warned.has(k))return;warned.add(k);toast(m)};
 let autoOn=localStorage.getItem('tp_auto')!=='0',at;
 function setAuto(v,silent){
@@ -375,7 +376,7 @@ function setAuto(v,silent){
  if(v&&!silent){autoRoute(cur());autoFill()}
 }
 function autoRoute(s){if(!autoOn||!s||s.points.length<2)return;clearTimeout(at);at=setTimeout(()=>routeStage(s,true),900)}
-async function routeStage(s,quiet){
+async function routeStage(s,quiet,noElev){
  if(!s||s.points.length<2)return quiet||toast('Place au moins 2 repères sur la carte (✏ Tracer).');
  quiet||toast('Calcul de l’itinéraire à pied…');
  const my=(rtTok.get(s.id)||0)+1,k0=key(s),pts=s.points.slice();rtTok.set(s.id,my);
@@ -402,7 +403,7 @@ async function routeStage(s,quiet){
   if(rtTok.get(s.id)!==my)return;
   s.route=out;s.routeKm=km;s.routeKey=k0;changed();renderList();drawMap();
   quiet||toast('Itinéraire calculé : '+km.toFixed(1)+' km');
-  elevStage(s,true);
+  if(!noElev)elevStage(s,true);
  }catch(e){quiet?warnOnce('route','Itinéraire indisponible pour le moment (ou aucun chemin entre deux repères : touche un repère pour forcer une ligne droite).'):toast('Calcul impossible : service indisponible ou aucun chemin entre ces repères. Tu peux forcer un tronçon en ligne droite en touchant un repère.')}
 }
 async function autoFill(){
@@ -448,6 +449,12 @@ async function autoNames(){
 }
 const UNDO={};
 function pushUndo(s){const u=UNDO[s.id]=UNDO[s.id]||[];u.push(JSON.stringify(s.points));if(u.length>50)u.shift()}
+$('#belev').onclick=async()=>{
+ const s=cur();if(!s||s.points.length<2)return toast('Place au moins 2 repères sur le jour choisi.');
+ toast('Mise à jour du profil…');
+ if(!okRoute(s))await routeStage(s,true,true);
+ await elevStage(s,false);
+};
 $('#bundo').onclick=()=>{
  const s=cur();if(!s)return;
  const u=UNDO[s.id];
@@ -470,31 +477,36 @@ function samples(s){
  }
  return out;
 }
-let elFail=0;
+async function fetchT(u,ms=12000){
+ const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);
+ try{return await fetch(u,{signal:c.signal})}finally{clearTimeout(t)}
+}
+const ll=c=>c.map(p=>p.la.toFixed(5)+','+p.lo.toFixed(5));
+const EL_PROV=[
+ ['Open-Meteo',async c=>{
+  const r=await fetchT('https://api.open-meteo.com/v1/elevation?latitude='+c.map(p=>p.la.toFixed(5)).join(',')+'&longitude='+c.map(p=>p.lo.toFixed(5)).join(','));
+  const j=await r.json();if(!j.elevation||j.elevation.length!==c.length)throw new Error(j.reason||('HTTP '+r.status));return j.elevation}],
+ ['OpenTopoData',async c=>{
+  const r=await fetchT('https://api.opentopodata.org/v1/eudem25m,srtm30m?locations='+ll(c).join('|'));
+  const j=await r.json();if(!j.results||j.results.length!==c.length)throw new Error(j.error||('HTTP '+r.status));return j.results.map(x=>x.elevation==null?0:x.elevation)}],
+ ['Open-Elevation',async c=>{
+  const r=await fetchT('https://api.open-elevation.com/api/v1/lookup?locations='+ll(c).join('|'));
+  const j=await r.json();if(!j.results||j.results.length!==c.length)throw new Error('HTTP '+r.status);return j.results.map(x=>x.elevation)}]
+];
+const elFail={};
 async function fetchElev(c){
- const q1=async()=>{
-  const r=await fetch('https://api.open-meteo.com/v1/elevation?latitude='+c.map(p=>p.la.toFixed(5)).join(',')+'&longitude='+c.map(p=>p.lo.toFixed(5)).join(','));
-  const j=await r.json();
-  if(!j.elevation||j.elevation.length!==c.length)throw new Error(j.reason||('HTTP '+r.status));
-  return j.elevation;
- };
- const q2=async()=>{
-  const r=await fetch('https://api.opentopodata.org/v1/eudem25m,srtm30m?locations='+c.map(p=>p.la.toFixed(5)+','+p.lo.toFixed(5)).join('|'));
-  const j=await r.json();
-  if(!j.results||j.results.length!==c.length)throw new Error(j.error||('HTTP '+r.status));
-  return j.results.map(x=>x.elevation==null?0:x.elevation);
- };
- if(Date.now()-elFail>600000){
-  try{return await q1()}catch(e1){
-   elFail=Date.now();
-   try{await sleep(1100);return await q2()}catch(e2){throw new Error('Open-Meteo : '+e1.message+' · OpenTopoData : '+e2.message)}
-  }
+ let list=EL_PROV.filter(([n])=>Date.now()-(elFail[n]||0)>600000);if(!list.length)list=EL_PROV;
+ const errs=[];
+ for(const [n,f] of list){
+  try{return await f(c)}
+  catch(e){elFail[n]=Date.now();errs.push(n+' : '+(e.name==='AbortError'?'délai dépassé':e.message));await sleep(1100)}
  }
- return await q2();
+ throw new Error(errs.join(' · '));
 }
 async function elevStage(s,quiet){
- if(!s||s.points.length<2||elBusy.has(s.id))return;
- elBusy.add(s.id);
+ if(!s||s.points.length<2)return;
+ const t0=elBusy.get(s.id);if(t0&&Date.now()-t0<90000)return;
+ elBusy.set(s.id,Date.now());
  try{
   const k0=elevKey(s),sm=samples(s),z=[];
   for(let i=0;i<sm.length;i+=100){z.push(...await fetchElev(sm.slice(i,i+100)));if(i+100<sm.length)await sleep(1100)}
@@ -503,7 +515,8 @@ async function elevStage(s,quiet){
   for(const v of sz){if(v-ref>=3){up+=v-ref;ref=v}else if(ref-v>=3){dn+=ref-v;ref=v}}
   s.elev={d:sm.map(p=>+p.d.toFixed(2)),z:sz.map(Math.round),up:Math.round(up),dn:Math.round(dn),min:Math.round(Math.min(...sz)),max:Math.round(Math.max(...sz))};
   s.elevKey=k0;changed();renderList();
- }catch(e){warnOnce('elev','Dénivelé indisponible : '+em(e))}
+  if(!quiet)toast('Profil mis à jour : D+ '+s.elev.up+' m · D− '+s.elev.dn+' m');
+ }catch(e){const m='Dénivelé indisponible : '+em(e);quiet?warnOnce('elev',m):toast(m)}
  finally{elBusy.delete(s.id)}
 }
 function profSvg(s){
