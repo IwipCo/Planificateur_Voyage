@@ -120,6 +120,7 @@ dialog p{font-size:13px;color:var(--mute)}
    <button id="bgr" title="Afficher ou masquer les sentiers de grande randonnée (GR…)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align:-3px"><rect x="1.5" y="2" width="13" height="5.5" fill="#fff" stroke="#8a8a8a" stroke-width=".7"/><rect x="1.5" y="7.5" width="13" height="5.5" fill="#d62828" stroke="#8a8a8a" stroke-width=".7"/></svg> Sentiers GR</button>
    <button id="btr" title="Afficher ou masquer les trajets aller / retour">🚆 Trajets</button>
    <button id="bpoi" title="Points d’intérêt : eau, commerces, camping…">📍 Points</button>
+   <button id="poistat" hidden title="Recherche de points d’intérêt en cours : toucher pour voir ou arrêter">⏳</button>
    <div id="editbar" hidden>
     <select id="rmode" title="Mode de calcul de l’itinéraire"><option value="foot">🥾 Piéton</option><option value="car">🚗 Voiture</option></select>
     <button id="bdirect" title="Les prochains points seront reliés en ligne droite, hors chemins">↯ Ligne droite : non</button>
@@ -1096,16 +1097,21 @@ function poiRecapHtml(){
  }
  return h;
 }
+let ovStart=0;
 async function overpassQ(q){
- const errs=[];
- for(const u of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter']){
-  try{
-   const r=await fetchT(u,50000,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)});
-   if(!r.ok){errs.push(u.split('/')[2]+' : '+r.status);continue}
-   return await r.json();
-  }catch(e){errs.push(u.split('/')[2]+' : '+(e.name==='AbortError'?'délai dépassé':e.message))}
+ const M=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'],errs=[];
+ for(let pass=0;pass<2;pass++){
+  for(let k=0;k<M.length;k++){
+   const u=M[(ovStart+k)%M.length];
+   try{
+    const r=await fetchT(u,28000,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)});
+    if(!r.ok){errs.push(u.split('/')[2]+' : '+r.status);continue}
+    const j=await r.json();ovStart=(ovStart+k)%M.length;return j;
+   }catch(e){errs.push(u.split('/')[2]+' : '+(e.name==='AbortError'?'délai dépassé':e.message))}
+  }
+  if(pass===0)await sleep(3000);
  }
- throw new Error(errs.join(' · '));
+ throw new Error(errs.slice(-3).join(' · '));
 }
 function poiQuery(cats,R,line){
  const pts=[];let acc=0,prev=null;
@@ -1114,47 +1120,82 @@ function poiQuery(cats,R,line){
  const la=line.map(p=>p[0]),lo=line.map(p=>p[1]),pad=R/111000+0.003;
  const bb=[Math.min(...la)-pad,Math.min(...lo)-pad,Math.max(...la)+pad,Math.max(...lo)+pad].map(v=>v.toFixed(5)).join(',');
  const f=cats.map(c=>POI_T[c].q.map(x=>'nwr'+x+';').join('')).join('');
- return '[out:json][timeout:40][bbox:'+bb+'];('+f+')->.c;nwr.c(around:'+R+','+sel.map(p=>p[0].toFixed(5)+','+p[1].toFixed(5)).join(',')+');out center tags;';
+ return '[out:json][timeout:25][bbox:'+bb+'];('+f+')->.c;nwr.c(around:'+R+','+sel.map(p=>p[0].toFixed(5)+','+p[1].toFixed(5)).join(',')+');out center tags;';
 }
-async function searchPois(){
- const msg=$('#pd-msg'),btn=$('#pd-search');
- const cats=Object.keys(POI_T).filter(k=>poiShow[k]&&POI_T[k].q);
+function densify(line,step=1000){
+ const o=[line[0]];
+ for(let i=1;i<line.length;i++){const a=line[i-1],b=line[i],n=Math.max(1,Math.ceil(map.distance(a,b)/step));for(let k=1;k<=n;k++)o.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n])}
+ return o;
+}
+function chunkLine(line,maxM=6000){
+ const L=densify(line),out=[];let cur=[L[0]],acc=0;
+ for(let i=1;i<L.length;i++){acc+=map.distance(L[i-1],L[i]);cur.push(L[i]);if(acc>=maxM){out.push(cur);cur=[L[i]];acc=0}}
+ if(cur.length>1)out.push(cur);
+ return out;
+}
+let poiJob=null;
+function updJobUI(){
+ const j=poiJob,b=$('#poistat');
+ if(!j){b.hidden=true;$('#pd-search').textContent='🔍 Chercher le long de l’itinéraire';return}
+ b.hidden=false;b.textContent='⏳ Points '+j.done+'/'+j.total+(j.added?' · +'+j.added:'');
+ $('#pd-search').textContent='⏹ Arrêter la recherche';
+ $('#pd-msg').textContent='Recherche en arrière-plan : '+j.done+'/'+j.total+' tronçons, '+j.added+' point(s) trouvé(s)'+(j.fail?', '+j.fail+' échec(s) (nouvel essai à la fin)':'')+'.';
+}
+function stopPoi(){if(poiJob){poiJob.cancel=true;toast('Recherche arrêtée après le tronçon en cours.')}}
+async function runPoi(job){
+ const T=job.T,failed=[];
+ const doTask=async t=>{
+  const j=await overpassQ(poiQuery(job.cats,job.R,t.chunk));
+  (j.elements||[]).forEach(el=>{
+   const tg=el.tags||{};if(tg.drinking_water==='no')return;
+   const lat=el.lat!=null?el.lat:(el.center&&el.center.lat),lng=el.lon!=null?el.lon:(el.center&&el.center.lon);
+   if(lat==null||lng==null)return;
+   const osm=el.type+'/'+el.id;if(T.pois.some(x=>x.osm===osm))return;
+   const pr=proj(t.line,[lat,lng]);if(pr.d>job.R+30)return;
+   T.pois.push({id:'o'+el.type[0]+el.id,type:poiType(tg),name:tg.name||'',lat:+(+lat).toFixed(5),lng:+(+lng).toFixed(5),note:tg.opening_hours?'Horaires : '+tg.opening_hours:'',src:'osm',osm,sid:t.sid,km:+pr.km.toFixed(2),off:Math.round(pr.d)});
+   job.added++;
+  });
+ };
+ const refresh=()=>{if(job.added){touched.add(T.id);dirty=true;if(curId===T.id){status('● Non enregistré');drawPois();renderList()}}};
+ for(let i=0;i<job.tasks.length&&!job.cancel;i++){
+  try{await doTask(job.tasks[i])}catch(e){job.lastErr=em(e);failed.push(job.tasks[i]);job.fail++}
+  job.done++;updJobUI();
+  if(i%4===3)refresh();
+  await sleep(900);
+ }
+ if(!job.cancel&&failed.length){
+  await sleep(5000);
+  for(const t of failed){if(job.cancel)break;try{await doTask(t);job.fail--}catch(e){job.lastErr=em(e)}await sleep(900)}
+ }
+ refresh();
+ poiJob=null;updJobUI();updPoiCount();
+ toast(job.cancel?'Recherche arrêtée : '+job.added+' point(s) ajouté(s).':job.added+' point(s) d’intérêt ajouté(s)'+(job.fail>0?' ; '+job.fail+' tronçon(s) non récupéré(s) ('+job.lastErr+') : relance la recherche pour compléter.':'.'));
+}
+function startPoi(){
+ if(poiJob)return;
+ const msg=$('#pd-msg'),cats=Object.keys(POI_T).filter(k=>poiShow[k]&&POI_T[k].q);
  if(!cats.length){msg.textContent='Coche au moins un type à rechercher (eau, commerces…).';return}
  const R=+$('#pd-r').value,st=($('#pd-scope').value==='day'?[cur()]:D.stages).filter(x=>x&&x.points.length>1);
  if(!st.length){msg.textContent='Trace d’abord un itinéraire (au moins 2 repères sur le jour).';return}
- btn.disabled=true;let added=0;
- try{
-  for(let k=0;k<st.length;k++){
-   const s=st[k],line=okRoute(s)?s.route:s.points;
-   msg.textContent='Recherche '+(k+1)+'/'+st.length+' (J'+(D.stages.indexOf(s)+1)+')…';
-   const j=await overpassQ(poiQuery(cats,R,line));
-   (j.elements||[]).forEach(el=>{
-    const t=el.tags||{};if(t.drinking_water==='no')return;
-    const lat=el.lat!=null?el.lat:(el.center&&el.center.lat),lng=el.lon!=null?el.lon:(el.center&&el.center.lon);
-    if(lat==null||lng==null)return;
-    const osm=el.type+'/'+el.id;if(D.pois.some(x=>x.osm===osm))return;
-    const pr=proj(line,[lat,lng]);if(pr.d>R+30)return;
-    D.pois.push({id:'o'+el.type[0]+el.id,type:poiType(t),name:t.name||'',lat:+(+lat).toFixed(5),lng:+(+lng).toFixed(5),note:t.opening_hours?'Horaires : '+t.opening_hours:'',src:'osm',osm,sid:s.id,km:+pr.km.toFixed(2),off:Math.round(pr.d)});
-    added++;
-   });
-   if(k<st.length-1)await sleep(1500);
-  }
-  msg.textContent=added+' nouveau(x) point(s) trouvé(s).';
-  if(added){changed();drawPois();renderList()}
- }catch(e){msg.textContent='Recherche impossible : '+em(e)}
- btn.disabled=false;updPoiCount();
+ const tasks=[];
+ st.forEach(s=>{const line=okRoute(s)?s.route:s.points;chunkLine(line).forEach(chunk=>tasks.push({sid:s.id,line,chunk}))});
+ poiJob={T:D,tasks,cats,R,total:tasks.length,done:0,added:0,fail:0,cancel:false,lastErr:''};
+ updJobUI();$('#pdlg').close();
+ toast('Recherche lancée en arrière-plan ('+tasks.length+' tronçons). Tu peux continuer à utiliser l’appli.');
+ runPoi(poiJob);
 }
 function updPoiCount(){const n=D.pois.length,o=D.pois.filter(x=>x.src==='osm').length;$('#pd-count').textContent=n+' point(s) enregistré(s) dont '+o+' importé(s).'}
 function openPoiMgr(){
  $('#pd-on').checked=poiOn;
  $('#pd-cats').innerHTML=Object.entries(POI_T).map(([k,t])=>`<label class="chk"><input type="checkbox" data-pc="${k}" ${poiShow[k]?'checked':''}>${t.e} ${t.l}</label>`).join('');
- $('#pd-msg').textContent='';updPoiCount();$('#pdlg').showModal();
+ $('#pd-msg').textContent='';updPoiCount();updJobUI();$('#pdlg').showModal();
 }
 $('#bpoi').onclick=openPoiMgr;
 $('#pd-x').onclick=()=>$('#pdlg').close();
 $('#pd-on').onchange=e=>{poiOn=e.target.checked;localStorage.setItem('tp_poi',poiOn?'1':'0');drawPois()};
 $('#pd-cats').addEventListener('change',e=>{const k=e.target.dataset.pc;if(!k)return;poiShow[k]=e.target.checked?1:0;localStorage.setItem('tp_poishow',JSON.stringify(poiShow));drawPois()});
-$('#pd-search').onclick=searchPois;
+$('#pd-search').onclick=()=>poiJob?stopPoi():startPoi();
+$('#poistat').onclick=openPoiMgr;
 $('#pd-add').onclick=()=>{$('#pdlg').close();addPoiMode=true;map.getContainer().style.cursor='crosshair';toast('Touche la carte à l’endroit du point.')};
 $('#pd-clear').onclick=()=>{if(!confirm('Supprimer tous les points importés d’OpenStreetMap ? (tes points ajoutés à la main sont conservés)'))return;D.pois=D.pois.filter(x=>x.src!=='osm');changed();drawPois();renderList();updPoiCount()};
 function openPoiDlg(id,ll){
