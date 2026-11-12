@@ -39,6 +39,14 @@ main{display:grid;grid-template-rows:42vh 1fr;height:calc(100dvh - 52px)}
 #editbar{display:flex;flex-wrap:wrap;gap:4px;flex-basis:100%}#editbar[hidden]{display:none}
 .ck{display:flex;gap:6px;align-items:center;margin:4px 0}.ck [data-ck=text]{flex:1;min-width:0}.ck select{width:auto;max-width:42%}
 .x.ed{right:6px}
+.cvr{display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--line);font-size:13px}.cvr>span:first-child{flex:1}
+#pd-cov details{border:1px solid var(--line);border-radius:8px;padding:4px 8px;margin:6px 0;background:var(--card)}
+#pd-cats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 4px}
+.pcat{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:68px;padding:8px 4px;margin:0;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-size:12px;line-height:1.2;text-align:center;cursor:pointer;user-select:none}
+.pcat .pe{font-size:24px;line-height:1}
+.pcat input{position:absolute;opacity:0;pointer-events:none}
+.pcat.on{border-color:var(--sea);background:rgba(31,111,120,.14);font-weight:600}
+.pcat:not(.on){opacity:.65}
 .seg{display:inline-flex}.seg button{border-radius:0}.seg button:first-child{border-radius:6px 0 0 6px}.seg button:last-child{border-radius:0 6px 6px 0;margin-left:-1px}
 .seg button.on{background:var(--sea);border-color:var(--sea);color:#fff;font-weight:600}
 .tabs button[hidden]{display:none}
@@ -120,6 +128,7 @@ dialog p{font-size:13px;color:var(--mute)}
    <button id="bgr" title="Afficher ou masquer les sentiers de grande randonnée (GR…)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align:-3px"><rect x="1.5" y="2" width="13" height="5.5" fill="#fff" stroke="#8a8a8a" stroke-width=".7"/><rect x="1.5" y="7.5" width="13" height="5.5" fill="#d62828" stroke="#8a8a8a" stroke-width=".7"/></svg> Sentiers GR</button>
    <button id="btr" title="Afficher ou masquer les trajets aller / retour">🚆 Trajets</button>
    <button id="bpoi" title="Points d’intérêt : eau, commerces, camping…">📍 Points</button>
+   <button id="bcov" title="Voir sur la carte les tronçons dont les points d’intérêt ne sont pas chargés">🧩 Tronçons</button>
    <button id="poistat" hidden title="Recherche de points d’intérêt en cours : toucher pour voir ou arrêter">⏳</button>
    <div id="editbar" hidden>
     <select id="rmode" title="Mode de calcul de l’itinéraire"><option value="foot">🥾 Piéton</option><option value="car">🚗 Voiture</option></select>
@@ -162,14 +171,17 @@ dialog p{font-size:13px;color:var(--mute)}
 <div class="dlg-b">
  <h3 style="margin:0 0 4px">Points d’intérêt</h3>
  <label class="chk"><input type="checkbox" id="pd-on"> Afficher sur la carte</label>
- <div class="meta" style="margin-top:8px">Types affichés sur la carte (et recherchés) :</div><div id="pd-cats" class="row" style="flex-wrap:wrap"></div>
- <div class="row" style="margin-top:10px"><select id="pd-scope"><option value="day">Jour choisi</option><option value="all">Tout le parcours</option></select><select id="pd-r"><option value="200">à 200 m</option><option value="500" selected>à 500 m</option><option value="1000">à 1 km</option></select></div>
- <button id="pd-search" class="pri">🔍 Chercher le long de l’itinéraire</button>
+ <div class="meta" style="margin-top:8px">Types affichés sur la carte (et chargés) :</div><div id="pd-cats"></div>
+ <div class="sec" style="margin-top:12px"><span>Chargement des points d’intérêt</span></div>
+ <div class="row"><select id="pd-r"><option value="200">à 200 m du tracé</option><option value="500" selected>à 500 m du tracé</option><option value="1000">à 1 km du tracé</option></select><button id="pd-covmap" title="Colorer sur la carte les tronçons selon leur état de chargement">🧩 Voir sur la carte</button></div>
+ <button id="pd-search" class="pri">⬇ Charger les tronçons manquants</button>
  <p class="meta" id="pd-msg"></p>
+ <div id="pd-cov"></div>
+ <div class="sec" style="margin-top:12px"><span>Points</span></div>
  <button id="pd-add">📍 Ajouter un point à la main</button>
  <p class="meta" id="pd-count"></p>
  <button id="pd-clear" class="danger">Supprimer les points importés</button>
- <p class="meta">Les points importés viennent d’OpenStreetMap (© contributeurs), la même base que de nombreuses applis de randonnée et de vélo.</p>
+ <p class="meta">Les points importés viennent d’OpenStreetMap (© contributeurs).</p>
 </div>
 <div class="dlg-f"><button id="pd-x">Fermer</button></div>
 </dialog>
@@ -253,7 +265,7 @@ async function ghPut(p,obj,sh,msg){
 }
 function norm(d){
  d.stages=d.stages||[];d.messages=d.messages||[];d.participants=Array.isArray(d.participants)&&d.participants.length?d.participants:['Moi'];
- d.start=d.start||'';d.end=d.end||'';d.title=d.title||'';d.transports=d.transports||[];d.homes=d.homes||{};d.checklist=d.checklist||[];d.pois=d.pois||[];d.tabsOff=d.tabsOff||[];d.pois.forEach(x=>{if(x.type==='food')x.type='resto'});d.spend=d.spend||[];d.payments=d.payments||[];
+ d.start=d.start||'';d.end=d.end||'';d.title=d.title||'';d.transports=d.transports||[];d.homes=d.homes||{};d.checklist=d.checklist||[];d.pois=d.pois||[];d.tabsOff=d.tabsOff||[];d.poiCov=d.poiCov||{};d.pois.forEach(x=>{if(x.type==='food')x.type='resto';if(x.type==='shelter')x.type='camp'});d.spend=d.spend||[];d.payments=d.payments||[];
  d.stages.forEach(s=>{s.points=Array.isArray(s.points)?s.points:[];const L=s.lodging=s.lodging||{name:'',address:'',price:'',status:'find'};if(!L.status)L.status=L.booked?'booked':'find';delete L.booked;L.nights=L.nights||1});
 }
 function wrap(d){
@@ -380,7 +392,7 @@ function drawMap(fit){
  });
  if(trOn&&view==='all')(D.transports||[]).forEach(t=>{if(t.fromLL)all.push(t.fromLL);if(t.toLL)all.push(t.toLL)});
  if(fit&&all.length)map.fitBounds(all,{padding:[30,30]});else if(fit)map.setView([46.6,2.4],5);
- $('#vall').classList.toggle('on',view==='all');
+ drawCov();$('#vall').classList.toggle('on',view==='all');
  $('#vday').classList.toggle('on',view==='day');
  $('#bdraw').classList.toggle('on',draw);$('#bdraw').textContent=draw?'✔ Terminer la modification':'✏ Modifier l’itinéraire';$('#editbar').hidden=!draw;const cs=cur();if(cs)$('#rmode').value=cs.rmode==='car'?'car':'foot';
  map.getContainer().style.cursor=draw?'crosshair':'';
@@ -1026,15 +1038,14 @@ $('#btr').onclick=()=>setTr(!trOn);
 /* ---------- Points d'intérêt (eau, commerces…) ---------- */
 const POI_T={
  water:{e:'💧',l:'Points d’eau',q:['["amenity"="drinking_water"]','["natural"="spring"]','["man_made"="water_tap"]','["amenity"="water_point"]']},
- camp:{e:'⛺',l:'Campings',q:['["tourism"="camp_site"]']},
- shelter:{e:'🛖',l:'Abris et refuges',q:['["amenity"="shelter"]','["tourism"~"^(wilderness_hut|alpine_hut)$"]']},
+ wc:{e:'🚻',l:'Toilettes',q:['["amenity"="toilets"]']},
+ shop:{e:'🛒',l:'Commerces',q:['["shop"~"^(supermarket|convenience|bakery|butcher|greengrocer|general)$"]']},
+ resto:{e:'🍴',l:'Restaurants',q:['["amenity"~"^(restaurant|fast_food)$"]']},
+ bar:{e:'🍺',l:'Bars et cafés',q:['["amenity"~"^(bar|pub|cafe)$"]']},
+ camp:{e:'⛺',l:'Campings et abris',q:['["tourism"="camp_site"]','["amenity"="shelter"]','["tourism"~"^(wilderness_hut|alpine_hut)$"]']},
  gite:{e:'🏡',l:'Gîtes et auberges',q:['["tourism"~"^(chalet|apartment|hostel)$"]']},
  bnb:{e:'🛏️',l:'Chambres d’hôtes',q:['["tourism"="guest_house"]']},
  hotel:{e:'🏨',l:'Hôtels',q:['["tourism"~"^(hotel|motel)$"]']},
- wc:{e:'🚻',l:'Toilettes',q:['["amenity"="toilets"]']},
- bar:{e:'🍺',l:'Bars et cafés',q:['["amenity"~"^(bar|pub|cafe)$"]']},
- resto:{e:'🍴',l:'Restaurants',q:['["amenity"~"^(restaurant|fast_food)$"]']},
- shop:{e:'🛒',l:'Commerces',q:['["shop"~"^(supermarket|convenience|bakery|butcher|greengrocer|general)$"]']},
  view:{e:'📷',l:'Points de vue'},danger:{e:'⚠️',l:'Passages difficiles'},other:{e:'📍',l:'Autres'}
 };
 let poiOn=localStorage.getItem('tp_poi')!=='0',addPoiMode=false,PE=null;
@@ -1043,8 +1054,7 @@ const poiLayer=L.layerGroup().addTo(map);
 $('#po-type').innerHTML=Object.entries(POI_T).map(([k,t])=>`<option value="${k}">${t.e} ${t.l}</option>`).join('');
 function poiType(t){
  if(t.amenity==='drinking_water'||t.natural==='spring'||t.man_made==='water_tap'||t.amenity==='water_point')return'water';
- if(t.tourism==='camp_site')return'camp';
- if(t.amenity==='shelter'||['wilderness_hut','alpine_hut'].includes(t.tourism))return'shelter';
+ if(t.tourism==='camp_site'||t.amenity==='shelter'||['wilderness_hut','alpine_hut'].includes(t.tourism))return'camp';
  if(['chalet','apartment','hostel'].includes(t.tourism))return'gite';
  if(t.tourism==='guest_house')return'bnb';
  if(['hotel','motel'].includes(t.tourism))return'hotel';
@@ -1098,15 +1108,15 @@ function poiRecapHtml(){
  return h;
 }
 let ovStart=0;
-async function overpassQ(q){
+async function overpassQ(q,pref){
  const M=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'],errs=[];
  for(let pass=0;pass<2;pass++){
   for(let k=0;k<M.length;k++){
-   const u=M[(ovStart+k)%M.length];
+   const u=M[((pref!=null?pref:ovStart)+k)%M.length];
    try{
     const r=await fetchT(u,28000,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)});
     if(!r.ok){errs.push(u.split('/')[2]+' : '+r.status);continue}
-    const j=await r.json();ovStart=(ovStart+k)%M.length;return j;
+    const j=await r.json();if(pref==null)ovStart=(ovStart+k)%M.length;return j;
    }catch(e){errs.push(u.split('/')[2]+' : '+(e.name==='AbortError'?'délai dépassé':e.message))}
   }
   if(pass===0)await sleep(3000);
@@ -1127,77 +1137,174 @@ function densify(line,step=1000){
  for(let i=1;i<line.length;i++){const a=line[i-1],b=line[i],n=Math.max(1,Math.ceil(map.distance(a,b)/step));for(let k=1;k<=n;k++)o.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n])}
  return o;
 }
-function chunkLine(line,maxM=6000){
- const L=densify(line),out=[];let cur=[L[0]],acc=0;
- for(let i=1;i<L.length;i++){acc+=map.distance(L[i-1],L[i]);cur.push(L[i]);if(acc>=maxM){out.push(cur);cur=[L[i]];acc=0}}
- if(cur.length>1)out.push(cur);
+function chunkInfo(line,maxM=6000){
+ const L=densify(line),out=[];let cur=[L[0]],acc=0,start=0,tot=0;
+ for(let i=1;i<L.length;i++){const d=map.distance(L[i-1],L[i]);acc+=d;tot+=d;cur.push(L[i]);if(acc>=maxM){out.push({pts:cur,a:start,b:tot});cur=[L[i]];start=tot;acc=0}}
+ if(cur.length>1){if(out.length&&tot-start<1500){const l=out[out.length-1];l.pts.push(...cur.slice(1));l.b=tot}else out.push({pts:cur,a:start,b:tot})}
  return out;
 }
-let poiJob=null;
+const covSig=s=>okRoute(s)?'r|'+s.routeKey:'p|'+key(s);
+const stLine=s=>okRoute(s)?s.route:s.points;
+let poiJob=null;const covOpen=new Set();
+function chunkStatus(s,i){
+ const j=poiJob;
+ if(j&&j.T===D){const t=j.tasks.find(x=>x.sid===s.id&&x.i===i&&!x.done);if(t)return j.running.has(s.id+':'+i)?'run':'wait'}
+ const cov=(D.poiCov||{})[s.id];
+ if(!cov)return'none';if(cov.sig!==covSig(s))return'stale';
+ return cov.err[i]?'err':(cov.ok[i]?'ok':'none');
+}
+const COV_L={run:'⏳ en cours',wait:'⏳ en attente',err:'⚠ échec',stale:'🔄 tracé modifié',none:'— à charger'};
+const covLabel=(st,s,k)=>st==='ok'?'✅ '+(((D.poiCov||{})[s.id].ok[k]||{}).c||0)+' point(s)':st==='err'&&((D.poiCov||{})[s.id]||{ok:{}}).ok[k]?'⚠ échec (anciens points conservés)':COV_L[st];
+const covChip=(st,s,k)=>`<span class="chip ${st==='ok'?'ok':(st==='run'||st==='wait')?'na':'warn'}">${covLabel(st,s,k)}</span>`;
+function renderCov(){
+ const el=$('#pd-cov');if(!el)return;
+ const rows=[];let tot=0,okc=0;
+ D.stages.forEach((s,i)=>{
+  if(s.points.length<2)return;
+  const ch=chunkInfo(stLine(s)),st=ch.map((_,k)=>chunkStatus(s,k)),o=st.filter(x=>x==='ok').length;
+  tot+=ch.length;okc+=o;
+  rows.push(`<details data-cov="${s.id}" ${covOpen.has(s.id)?'open':''}><summary>J${i+1} · ${esc(s.name)} <span class="chip ${o===ch.length?'ok':'warn'}">${o===ch.length?'✅':'⚠'} ${o}/${ch.length}</span></summary>`+
+   ch.map((c,k)=>`<div class="cvr"><span>Tronçon ${k+1} <span class="meta">km ${(c.a/1000).toFixed(1)}–${(c.b/1000).toFixed(1)}</span></span>${covChip(st[k],s,k)}<button class="ic" data-cv="chunk" data-sid="${s.id}" data-i="${k}" title="Mettre à jour ce tronçon" aria-label="Mettre à jour ce tronçon">↻</button></div>`).join('')+
+   `<button data-cv="day" data-sid="${s.id}">↻ Mettre à jour tout le jour</button></details>`);
+ });
+ el.innerHTML=rows.length?`<p class="meta">${tot} tronçon(s) : ${okc} chargé(s), ${tot-okc} à charger ou à mettre à jour.</p>`+rows.join(''):'<p class="meta">Trace d’abord un itinéraire (au moins 2 repères) pour voir les tronçons.</p>';
+}
+$('#pd-cov').addEventListener('toggle',e=>{const d=e.target;if(d.tagName!=='DETAILS')return;d.open?covOpen.add(d.dataset.cov):covOpen.delete(d.dataset.cov)},true);
+$('#pd-cov').addEventListener('click',e=>{
+ const b=e.target.closest('[data-cv]');if(!b)return;
+ if(b.dataset.cv==='chunk')startPoi('chunk',b.dataset.sid,+b.dataset.i);
+ if(b.dataset.cv==='day')startPoi('day',b.dataset.sid);
+});
+const covLayer=L.layerGroup().addTo(map);
+let covOn=localStorage.getItem('tp_cov')==='1';
+function drawCov(){
+ covLayer.clearLayers();
+ const bt=$('#bcov');bt.classList.toggle('on',covOn);
+ if(!covOn){bt.textContent='🧩 Tronçons';return}
+ let miss=0;
+ D.stages.forEach((s,i)=>{
+  if(s.points.length<2)return;
+  chunkInfo(stLine(s)).forEach((c,k)=>{
+   const st=chunkStatus(s,k),ok=st==='ok',busy=st==='run'||st==='wait',col=ok?'#2f9e44':st==='err'?'#d6336c':busy?'#1c7ed6':'#f08c00';
+   if(!ok)miss++;
+   const pl=L.polyline(c.pts,{color:col,weight:ok?4:8,opacity:ok?.55:.85,dashArray:ok?null:'2 10',lineCap:'round'}).addTo(covLayer);
+   if(!ok&&!busy){
+    const box=document.createElement('div');
+    box.innerHTML=`<b>J${i+1} · tronçon ${k+1}</b><br><span class="meta">km ${(c.a/1000).toFixed(1)}–${(c.b/1000).toFixed(1)} · ${COV_L[st]}</span><br>`;
+    const b=document.createElement('button');b.textContent='↻ Charger ce tronçon';b.onclick=()=>{map.closePopup();startPoi('chunk',s.id,k)};
+    box.appendChild(b);pl.bindPopup(box);
+   }
+  });
+ });
+ bt.textContent='🧩 À charger : '+miss;
+}
+function setCov(v){
+ covOn=v;localStorage.setItem('tp_cov',v?'1':'0');drawCov();
+ if(v)toast('Orange : à charger · Bleu : en cours · Rouge : échec · Vert : chargé. Touche un tronçon pour le charger.');
+}
+$('#bcov').onclick=()=>setCov(!covOn);
+$('#pd-covmap').onclick=()=>{setCov(true);$('#pdlg').close()};
 function updJobUI(){
  const j=poiJob,b=$('#poistat');
- if(!j){b.hidden=true;$('#pd-search').textContent='🔍 Chercher le long de l’itinéraire';return}
- b.hidden=false;b.textContent='⏳ Points '+j.done+'/'+j.total+(j.added?' · +'+j.added:'');
- $('#pd-search').textContent='⏹ Arrêter la recherche';
- $('#pd-msg').textContent='Recherche en arrière-plan : '+j.done+'/'+j.total+' tronçons, '+j.added+' point(s) trouvé(s)'+(j.fail?', '+j.fail+' échec(s) (nouvel essai à la fin)':'')+'.';
+ if(!j){b.hidden=true;$('#pd-search').textContent='⬇ Charger les tronçons manquants'}
+ else{
+  b.hidden=false;b.textContent='⏳ Points '+j.done+'/'+j.total+(j.added?' · +'+j.added:'');
+  $('#pd-search').textContent='⏹ Arrêter le chargement';
+  $('#pd-msg').textContent='Chargement en arrière-plan : '+j.done+'/'+j.total+' tronçons, '+j.added+' point(s) trouvé(s)'+(j.fail?', '+j.fail+' échec(s) (nouvel essai à la fin)':'')+'.';
+ }
+ if($('#pdlg').hasAttribute('open'))renderCov();
+ drawCov();
 }
-function stopPoi(){if(poiJob){poiJob.cancel=true;toast('Recherche arrêtée après le tronçon en cours.')}}
+function stopPoi(){if(poiJob){poiJob.cancel=true;toast('Chargement arrêté après les tronçons en cours.')}}
+function covRec(T,t,job){
+ if(covSig(t.s)!==t.sig)return null;
+ let c=T.poiCov[t.sid];
+ if(!c||c.sig!==t.sig)c=T.poiCov[t.sid]={sig:t.sig,R:job.R,cats:job.cats.join(','),n:t.n,ok:{},err:{}};
+ return c;
+}
 async function runPoi(job){
  const T=job.T,failed=[];
- const doTask=async t=>{
-  const j=await overpassQ(poiQuery(job.cats,job.R,t.chunk));
+ const doTask=async(t,pref)=>{
+  const j=await overpassQ(poiQuery(job.cats,job.R,t.pts),pref);
+  let n=0;
   (j.elements||[]).forEach(el=>{
    const tg=el.tags||{};if(tg.drinking_water==='no')return;
    const lat=el.lat!=null?el.lat:(el.center&&el.center.lat),lng=el.lon!=null?el.lon:(el.center&&el.center.lon);
    if(lat==null||lng==null)return;
-   const osm=el.type+'/'+el.id;if(T.pois.some(x=>x.osm===osm))return;
    const pr=proj(t.line,[lat,lng]);if(pr.d>job.R+30)return;
+   n++;
+   const osm=el.type+'/'+el.id;if(T.pois.some(x=>x.osm===osm))return;
    T.pois.push({id:'o'+el.type[0]+el.id,type:poiType(tg),name:tg.name||'',lat:+(+lat).toFixed(5),lng:+(+lng).toFixed(5),note:tg.opening_hours?'Horaires : '+tg.opening_hours:'',src:'osm',osm,sid:t.sid,km:+pr.km.toFixed(2),off:Math.round(pr.d)});
    job.added++;
   });
+  const c=covRec(T,t,job);if(c){c.ok[t.i]={t:Date.now(),c:n};delete c.err[t.i];c.R=job.R;c.cats=job.cats.join(',')}
+  touched.add(T.id);dirty=true;
  };
- const refresh=()=>{if(job.added){touched.add(T.id);dirty=true;if(curId===T.id){status('● Non enregistré');drawPois();renderList()}}};
- for(let i=0;i<job.tasks.length&&!job.cancel;i++){
-  try{await doTask(job.tasks[i])}catch(e){job.lastErr=em(e);failed.push(job.tasks[i]);job.fail++}
-  job.done++;updJobUI();
-  if(i%4===3)refresh();
-  await sleep(900);
- }
+ const refresh=()=>{if(curId===T.id){status('● Non enregistré');drawPois();renderList()}};
+ const worker=async w=>{
+  while(!job.cancel&&job.next<job.tasks.length){
+   const t=job.tasks[job.next++],k=t.sid+':'+t.i;job.running.add(k);updJobUI();
+   try{await doTask(t,w)}
+   catch(e){job.lastErr=em(e);failed.push(t);job.fail++;const c=covRec(T,t,job);if(c)c.err[t.i]=job.lastErr}
+   job.running.delete(k);t.done=true;job.done++;updJobUI();
+   if(job.done%4===0)refresh();
+   await sleep(700);
+  }
+ };
+ await Promise.all([worker(0),worker(1)]);
  if(!job.cancel&&failed.length){
   await sleep(5000);
-  for(const t of failed){if(job.cancel)break;try{await doTask(t);job.fail--}catch(e){job.lastErr=em(e)}await sleep(900)}
+  for(const t of failed){
+   if(job.cancel)break;
+   const k=t.sid+':'+t.i;t.done=false;job.running.add(k);updJobUI();
+   try{await doTask(t,0);job.fail--}catch(e){job.lastErr=em(e)}
+   job.running.delete(k);t.done=true;updJobUI();await sleep(700);
+  }
  }
  refresh();
  poiJob=null;updJobUI();updPoiCount();
- toast(job.cancel?'Recherche arrêtée : '+job.added+' point(s) ajouté(s).':job.added+' point(s) d’intérêt ajouté(s)'+(job.fail>0?' ; '+job.fail+' tronçon(s) non récupéré(s) ('+job.lastErr+') : relance la recherche pour compléter.':'.'));
+ const msg=job.cancel?'Chargement arrêté : '+job.added+' point(s) ajouté(s).':job.added+' point(s) d’intérêt ajouté(s)'+(job.fail>0?' ; '+job.fail+' tronçon(s) en échec ('+job.lastErr+') : relance-les depuis la liste.':'.');
+ $('#pd-msg').textContent=msg;toast(msg);
 }
-function startPoi(){
- if(poiJob)return;
- const msg=$('#pd-msg'),cats=Object.keys(POI_T).filter(k=>poiShow[k]&&POI_T[k].q);
- if(!cats.length){msg.textContent='Coche au moins un type à rechercher (eau, commerces…).';return}
- const R=+$('#pd-r').value,st=($('#pd-scope').value==='day'?[cur()]:D.stages).filter(x=>x&&x.points.length>1);
- if(!st.length){msg.textContent='Trace d’abord un itinéraire (au moins 2 repères sur le jour).';return}
+function buildTasks(mode,sid,idx){
  const tasks=[];
- st.forEach(s=>{const line=okRoute(s)?s.route:s.points;chunkLine(line).forEach(chunk=>tasks.push({sid:s.id,line,chunk}))});
- poiJob={T:D,tasks,cats,R,total:tasks.length,done:0,added:0,fail:0,cancel:false,lastErr:''};
- updJobUI();$('#pdlg').close();
- toast('Recherche lancée en arrière-plan ('+tasks.length+' tronçons). Tu peux continuer à utiliser l’appli.');
+ D.stages.forEach(s=>{
+  if(s.points.length<2||(sid&&s.id!==sid))return;
+  const line=stLine(s),ch=chunkInfo(line),sig=covSig(s);
+  ch.forEach((c,i)=>{
+   if(idx!=null&&i!==idx)return;
+   if(mode==='missing'&&chunkStatus(s,i)==='ok')return;
+   tasks.push({s,sid:s.id,i,n:ch.length,sig,line,pts:c.pts,done:false});
+  });
+ });
+ return tasks;
+}
+function startPoi(mode,sid,idx){
+ if(poiJob){toast('Un chargement est déjà en cours : arrête-le ou attends sa fin.');return}
+ mode=mode||'missing';
+ const msg=$('#pd-msg'),cats=Object.keys(POI_T).filter(k=>poiShow[k]&&POI_T[k].q);
+ if(!cats.length){msg.textContent='Coche au moins un type à charger (eau, commerces…).';return}
+ const tasks=buildTasks(mode,sid,idx);
+ if(!tasks.length){msg.textContent=D.stages.some(s=>s.points.length>1)?'Tous les tronçons sont déjà chargés.':'Trace d’abord un itinéraire (au moins 2 repères sur le jour).';return}
+ poiJob={T:D,tasks,cats,R:+$('#pd-r').value,total:tasks.length,done:0,added:0,fail:0,cancel:false,lastErr:'',running:new Set(),next:0};
+ updJobUI();
+ toast('Chargement lancé en arrière-plan ('+tasks.length+' tronçon(s)). Tu peux fermer cette fenêtre et continuer.');
  runPoi(poiJob);
 }
 function updPoiCount(){const n=D.pois.length,o=D.pois.filter(x=>x.src==='osm').length;$('#pd-count').textContent=n+' point(s) enregistré(s) dont '+o+' importé(s).'}
 function openPoiMgr(){
  $('#pd-on').checked=poiOn;
- $('#pd-cats').innerHTML=Object.entries(POI_T).map(([k,t])=>`<label class="chk"><input type="checkbox" data-pc="${k}" ${poiShow[k]?'checked':''}>${t.e} ${t.l}</label>`).join('');
- $('#pd-msg').textContent='';updPoiCount();updJobUI();$('#pdlg').showModal();
+ $('#pd-cats').innerHTML=Object.entries(POI_T).map(([k,t])=>`<label class="pcat${poiShow[k]?' on':''}"><input type="checkbox" data-pc="${k}" ${poiShow[k]?'checked':''}><span class="pe">${t.e}</span><span class="pl">${t.l}</span></label>`).join('');
+ $('#pd-msg').textContent='';updPoiCount();updJobUI();renderCov();$('#pdlg').showModal();
 }
 $('#bpoi').onclick=openPoiMgr;
 $('#pd-x').onclick=()=>$('#pdlg').close();
 $('#pd-on').onchange=e=>{poiOn=e.target.checked;localStorage.setItem('tp_poi',poiOn?'1':'0');drawPois()};
-$('#pd-cats').addEventListener('change',e=>{const k=e.target.dataset.pc;if(!k)return;poiShow[k]=e.target.checked?1:0;localStorage.setItem('tp_poishow',JSON.stringify(poiShow));drawPois()});
+$('#pd-cats').addEventListener('change',e=>{const k=e.target.dataset.pc;if(!k)return;poiShow[k]=e.target.checked?1:0;e.target.closest('.pcat').classList.toggle('on',e.target.checked);localStorage.setItem('tp_poishow',JSON.stringify(poiShow));drawPois()});
 $('#pd-search').onclick=()=>poiJob?stopPoi():startPoi();
 $('#poistat').onclick=openPoiMgr;
 $('#pd-add').onclick=()=>{$('#pdlg').close();addPoiMode=true;map.getContainer().style.cursor='crosshair';toast('Touche la carte à l’endroit du point.')};
-$('#pd-clear').onclick=()=>{if(!confirm('Supprimer tous les points importés d’OpenStreetMap ? (tes points ajoutés à la main sont conservés)'))return;D.pois=D.pois.filter(x=>x.src!=='osm');changed();drawPois();renderList();updPoiCount()};
+$('#pd-clear').onclick=()=>{if(!confirm('Supprimer tous les points importés d’OpenStreetMap ? (tes points ajoutés à la main sont conservés)'))return;D.pois=D.pois.filter(x=>x.src!=='osm');D.poiCov={};changed();drawPois();renderList();updPoiCount();renderCov();drawCov()};
 function openPoiDlg(id,ll){
  if(id){const x=D.pois.find(v=>v.id===id);if(!x)return;PE={obj:x,isNew:false}}
  else{
@@ -1379,8 +1486,13 @@ addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='
 
 function renderAll(fit){
  const run=f=>{try{f()}catch(e){console.error(e);toast('Erreur d’affichage : '+em(e))}};
- run(()=>{$('#title').value=D.title;document.title=D.title});run(renderList);run(renderChat);run(renderTrip);run(renderRecap);run(renderBudget);run(renderCheck);run(()=>drawMap(fit));run(drawTrans);run(drawPois);run(applyTabs);run(()=>geoTrans());
+ run(()=>{$('#title').value=D.title;document.title=D.title});run(renderList);run(renderChat);run(renderTrip);run(renderRecap);run(renderBudget);run(renderCheck);run(()=>drawMap(fit));run(drawTrans);run(drawPois);run(drawCov);run(applyTabs);run(()=>geoTrans());
 }
+document.querySelectorAll('dialog').forEach(dl=>{
+ let down=null;
+ dl.addEventListener('mousedown',e=>{down=e.target});
+ dl.addEventListener('click',e=>{if(e.target===dl&&down===dl)dl.close();down=null});
+});
 (async()=>{
  setGR(grOn);
  try{await loadAll()}catch(e){toast('Chargement impossible : '+em(e))}
