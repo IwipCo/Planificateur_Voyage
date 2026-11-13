@@ -1,0 +1,18 @@
+{
+ "name": "carnet-de-route",
+ "version": "2.0.0",
+ "private": true,
+ "description": "Application de planification de voyages et de randonnées, déployable telle quelle sur GitHub Pages (aucune étape de build).",
+ "scripts": {
+  "test:unit": "node --test \"tests/unit/*.test.js\"",
+  "test:e2e": "node tests/e2e/run.js",
+  "test": "npm run test:unit && npm run test:e2e"
+ },
+ "devDependencies": {
+  "acorn": "^8.19.0",
+  "esbuild": "^0.25.0",
+  "eslint-scope": "^9.1.2",
+  "jsdom": "^26.0.0"
+ },
+ "type": "module"
+}
