@@ -1,0 +1,36 @@
+/* État partagé de l’application (un seul objet S) et valeur par défaut d’un voyage. */
+
+export const DEF={title:'Mon voyage',start:'',end:'',participants:['Moi','Ami(e)'],stages:[],messages:[]};
+export const S={
+ D:structuredClone(DEF),
+ sha:null,
+ sel:null,
+ view:'all',
+ draw:false,
+ dirty:false,
+ ALL:{version:2,trips:[]},
+ allSha:null,
+ loaded:false,
+ loadErr:'',
+ curId:null,
+ directNext:false,
+ autoOn:localStorage.getItem('tp_auto')!=='0',
+ at:undefined,
+ grOn:localStorage.getItem('tp_gr')==='1',
+ nt:undefined,
+ reorg:false,
+ showSettle:false,
+ lastTr:[],
+ trOn:localStorage.getItem('tp_tr')==='1',
+ geoBusy:false,
+ gt2:undefined,
+ poiOn:localStorage.getItem('tp_poi')!=='0',
+ addPoiMode:false,
+ PE:null,
+ ovStart:0,
+ poiJob:null,
+ covOn:localStorage.getItem('tp_cov')==='1',
+ pendingTab:null,
+ ET:null,
+ ETcover:undefined
+};
