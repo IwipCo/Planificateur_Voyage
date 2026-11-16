@@ -1,6 +1,6 @@
 {
  "name": "carnet-de-route",
- "version": "2.0.0",
+ "version": "2.1.0",
  "private": true,
  "description": "Application de planification de voyages et de randonnées, déployable telle quelle sur GitHub Pages (aucune étape de build).",
  "scripts": {
