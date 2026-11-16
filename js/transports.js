@@ -1,10 +1,10 @@
 /* Trajets aller / retour (pré-étape et post-étape). */
-import {esc, fmtDT} from './lib/util.js';
+import {esc, fmtD, fmtDT} from './lib/util.js';
 import {C} from './config.js';
 import {S} from './state.js';
 import {changed} from './store.js';
-import {LS} from './lodging.js';
-import {renderList} from './stages.js';
+import {LS, forList, preDate} from './lodging.js';
+import {openC, renderList} from './stages.js';
 import {schedGeo} from './transmap.js';
 
 export const openT=new Set();
@@ -30,9 +30,24 @@ export const legHtml=t=>{const o=openT.has('l'+t.id);return `<div class="leg" da
  <div class="row"><input type="number" min="0" step="1" data-tf="price" placeholder="Prix total (€)" value="${esc(t.price)}"><select data-tf="payer"><option value="">Payé par ?</option>${S.D.participants.map(p=>`<option value="${esc(p)}" ${t.payer===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
  <select data-tf="status">${Object.entries(LS).filter(([k])=>k!=='na').map(([k,v])=>`<option value="${k}" ${t.status===k?'selected':''}>${v[1]}</option>`).join('')}</select>
  <textarea data-tf="notes" rows="2" placeholder="Notes : correspondances, parking, bagages…">${esc(t.notes)}</textarea></div>`:'')+'</div>'};
+/* hébergement d'arrivée (veille de J1), dans la carte « Aller » */
+const preHint=()=>{const L=S.D.preLodging,pd=preDate();return pd?'Nuit'+((+L.nights||1)>1?'s':'')+' à partir du '+fmtD(pd)+', avant le départ du J1.':'Renseigne la date du J1 pour situer la nuit.'};
+const lodgBlock=()=>{
+ const L=S.D.preLodging,t=LS[L.status]||LS.na;
+ return `<details data-k="pl" data-id="pre" ${openC.has('plpre')?'open':''}><summary>🛏 Hébergement à l’arrivée (veille de J1) <span class="chip ${t[2]}">${t[0]} ${t[1]}</span></summary><div class="lodg">
+  <div class="meta" data-hint="pre">${preHint()}</div>
+  <input data-lf="name" placeholder="Nom de l’hébergement" value="${esc(L.name)}">
+  <input data-lf="address" placeholder="Adresse" value="${esc(L.address)}">
+  <div class="row"><input data-lf="price" type="number" min="0" step="1" placeholder="Prix total (€)" value="${esc(L.price)}"><input data-lf="nights" type="number" min="1" max="30" step="1" style="width:64px" title="Nombre de nuits" value="${L.nights||1}"><span class="meta">nuit(s)</span></div>
+  <div class="row"><span class="meta">Annulation gratuite jusqu’au</span><input type="date" data-lf="cancelBy" value="${esc(L.cancelBy)}"></div>
+  <div class="row"><select data-lf="status">${Object.entries(LS).map(([k,v])=>`<option value="${k}" ${L.status===k?'selected':''}>${v[1]}</option>`).join('')}</select>
+  <select data-lf="payer"><option value="">Payé par ?</option>${S.D.participants.map(p=>`<option value="${esc(p)}" ${L.payer===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
+  <div class="meta">Concerne :</div><div class="row" style="flex-wrap:wrap">${S.D.participants.map(p=>`<label class="chk"><input type="checkbox" data-lfor="${esc(p)}" ${forList(L).includes(p)?'checked':''}>${esc(p)}</label>`).join('')}</div>
+ </div></details>`;
+};
 export function transCard(dir){
  const o=openT.has('d'+dir),sm=trSummary(dir);
- return `<div class="card tr" data-dir="${dir}"><div class="hd thd" data-a="ttog"><span class="chev">${o?'▾':'▸'}</span><div class="tt">${sm.html}</div>${sm.chip}</div>`+(o?`<div class="bd">${legsOf(dir).map(legHtml).join('')}<div class="row"><button data-a="tadd">+ Ajouter un trajet</button></div></div>`:'')+'</div>';
+ return `<div class="card tr" data-dir="${dir}"><div class="hd thd" data-a="ttog"><span class="chev">${o?'▾':'▸'}</span><div class="tt">${sm.html}</div>${sm.chip}</div>`+(o?`<div class="bd">${legsOf(dir).map(legHtml).join('')}<div class="row"><button data-a="tadd">+ Ajouter un trajet</button></div>${dir==='out'?lodgBlock():''}</div>`:'')+'</div>';
 }
 export function transClick(e,c){
  const ae=e.target.closest('[data-a]');if(!ae)return;
@@ -48,6 +63,16 @@ export function transClick(e,c){
  if(a==='ldel'&&confirm('Supprimer ce trajet ?')){S.D.transports=S.D.transports.filter(t=>t.id!==id);changed();renderList();schedGeo()}
 }
 export function transInput(e,c){
+ const lf=e.target.dataset.lf,lfor=e.target.dataset.lfor;
+ if(lf!==undefined||lfor!==undefined){
+  const L=S.D.preLodging;
+  if(lfor!==undefined){const names=[...c.querySelectorAll('[data-lfor]')].filter(x=>x.checked).map(x=>x.dataset.lfor);L.for=names.length===S.D.participants.length?[]:names}
+  else L[lf]=e.target.value;
+  changed();
+  const hint=c.querySelector('[data-hint=pre]');if(hint)hint.textContent=preHint();
+  const t=LS[L.status]||LS.na,chip=c.querySelector('details[data-k=pl] summary .chip');if(chip){chip.className='chip '+t[2];chip.textContent=t[0]+' '+t[1]}
+  return;
+ }
  const f=e.target.dataset.tf,lg=e.target.closest('.leg');if(!f||!lg)return;
  const t=S.D.transports.find(x=>x.id===lg.dataset.lid);if(!t)return;
  t[f]=e.target.value;changed();
