@@ -36,19 +36,25 @@
    <button id="bdraw" title="Poser, déplacer ou insérer des points sur la carte">✏ Modifier l’itinéraire</button>
    <button id="bgr" title="Afficher ou masquer les sentiers de grande randonnée (GR…)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align:-3px"><rect x="1.5" y="2" width="13" height="5.5" fill="#fff" stroke="#8a8a8a" stroke-width=".7"/><rect x="1.5" y="7.5" width="13" height="5.5" fill="#d62828" stroke="#8a8a8a" stroke-width=".7"/></svg> Sentiers GR</button>
    <button id="btr" title="Afficher ou masquer les trajets aller / retour">🚆 Trajets</button>
+   <button id="brul" title="Règle : mesurer entre deux points (vol d’oiseau ou itinéraire)">📏 Règle</button>
+   <button id="bkm" title="Repères kilométriques le long du tracé (le pas change avec le zoom)">🏁 Repères km</button>
+   <button id="bsurf" title="Colorer le tracé selon le revêtement (analyse dans l’onglet Récap)">🛤 Revêtement</button>
    <button id="bpoi" title="Points d’intérêt : eau, commerces, camping…">📍 Points</button>
    <button id="bcov" title="Voir sur la carte les tronçons dont les points d’intérêt ne sont pas chargés">🧩 Tronçons</button>
    <button id="poistat" hidden title="Recherche de points d’intérêt en cours : toucher pour voir ou arrêter">⏳</button>
    <div id="editbar" hidden>
-    <select id="rmode" title="Mode de calcul de l’itinéraire"><option value="foot">🥾 Piéton</option><option value="car">🚗 Voiture</option></select>
+    <select id="rmode" title="Mode de calcul de l’itinéraire"><option value="foot">🥾 Piéton</option><option value="bike">🚴 Vélo</option><option value="car">🚗 Voiture</option></select>
+    <select id="reng" title="Moteur de calcul : OSM standard, ou BRouter (meilleur sur les sentiers, en test)"><option value="osrm">Moteur : OSM standard</option><option value="brouter">Moteur : BRouter (sentiers, test)</option></select>
     <button id="bdirect" title="Les prochains points seront reliés en ligne droite, hors chemins">↯ Ligne droite : non</button>
     <button id="bauto" title="Calcul automatique de l’itinéraire et du dénivélé">⚡ Auto : oui</button>
     <button id="broute" title="Calculer l’itinéraire à pied du jour choisi">🥾 Calculer l’itinéraire</button>
     <button id="belev" title="Recalculer le dénivelé et le profil d’altitude du jour choisi">📈 Update profil</button>
+    <button id="brev" title="Inverser le sens du tracé du jour choisi">⇄ Inverser le sens</button>
     <button id="bundo" title="Annuler la dernière modification des points (point posé, déplacé, supprimé…)">✕ Annuler le dernier point</button>
    </div>
   </div>
   <div id="map"></div>
+  <div id="rulbox" hidden></div>
  </div>
  <div id="panel">
   <div class="tabs"><button data-t="stages" class="on" title="Jours">Jours</button><button data-t="lodg" title="Hébergements">Héberg.</button><button data-t="recap" title="Récap du voyage">Récap</button><button data-t="budget" title="Budget et remboursements">Budget</button><button data-t="check" title="Checklist">Checklist</button><button data-t="chat" title="Discussion">Chat</button></div>
