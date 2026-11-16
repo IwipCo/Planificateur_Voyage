@@ -43,9 +43,9 @@ export function drawMap(fit){
  });
  if(S.trOn&&S.view==='all')(S.D.transports||[]).forEach(t=>{if(t.fromLL)all.push(t.fromLL);if(t.toLL)all.push(t.toLL)});
  if(fit&&all.length)map.fitBounds(all,{padding:[30,30]});else if(fit)map.setView([46.6,2.4],5);
- drawCov();$('#vall').classList.toggle('on',S.view==='all');
+ drawCov();window.dispatchEvent(new window.Event('tp:redraw'));$('#vall').classList.toggle('on',S.view==='all');
  $('#vday').classList.toggle('on',S.view==='day');
- $('#bdraw').classList.toggle('on',S.draw);$('#bdraw').textContent=S.draw?'✔ Terminer la modification':'✏ Modifier l’itinéraire';$('#editbar').hidden=!S.draw;const cs=cur();if(cs)$('#rmode').value=cs.rmode==='car'?'car':'foot';
+ $('#bdraw').classList.toggle('on',S.draw);$('#bdraw').textContent=S.draw?'✔ Terminer la modification':'✏ Modifier l’itinéraire';$('#editbar').hidden=!S.draw;const cs=cur();if(cs){$('#rmode').value=cs.rmode||'foot';$('#reng').value=cs.engine||'osrm'}
  map.getContainer().style.cursor=S.draw?'crosshair':'';
 }
 export const UNDO={};
