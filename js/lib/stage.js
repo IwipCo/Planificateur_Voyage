@@ -1,7 +1,7 @@
 /* Fonctions pures sur un jour (tracé, clés de validité, échantillonnage). */
 import {dm} from './geo.js';
 
-export const key=s=>s.points.map(p=>p.join(',')).join(';')+(s.rmode==='car'?'|car':'');
+export const key=s=>s.points.map(p=>p.join(',')).join(';')+(s.rmode==='car'||s.rmode==='bike'?'|'+s.rmode:'')+(s.engine==='brouter'?'|bro':'');
 export const okRoute=s=>s.route&&s.routeKey===key(s);
 export function dist(s){if(okRoute(s)&&s.routeKm!=null)return s.routeKm;let d=0;for(let i=1;i<s.points.length;i++)d+=dm(s.points[i-1],s.points[i]);return d/1000}
 export const elevKey=s=>key(s)+'|'+(s.routeKey||'');
