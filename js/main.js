@@ -27,10 +27,16 @@ import * as m_poi from './poi.js';
 import * as m_home from './home.js';
 import * as m_trip from './trip.js';
 import * as m_app from './app.js';
+import * as m_tools from './tools.js';
+import * as m_revetement from './revetement.js';
+import * as m_exportgpx from './exportgpx.js';
+import * as m_lib_track from './lib/track.js';
+import * as m_lib_surface from './lib/surface.js';
+import * as m_lib_gpx from './lib/gpx.js';
 import {S} from './state.js';
 import {toast} from './ui.js';
 
-const NS=[m_lib_geo,m_lib_util,m_state,m_config,m_stages,m_github,m_store,m_ui,m_mapcore,m_map,m_lib_stage,m_routing,m_names,m_elevation,m_weather,m_chat,m_lodging,m_transports,m_budget,m_lib_money,m_checklist,m_recap,m_transmap,m_lib_poi,m_poi,m_home,m_trip,m_app];
+const NS=[m_tools,m_revetement,m_exportgpx,m_lib_track,m_lib_surface,m_lib_gpx,m_lib_geo,m_lib_util,m_state,m_config,m_stages,m_github,m_store,m_ui,m_mapcore,m_map,m_lib_stage,m_routing,m_names,m_elevation,m_weather,m_chat,m_lodging,m_transports,m_budget,m_lib_money,m_checklist,m_recap,m_transmap,m_lib_poi,m_poi,m_home,m_trip,m_app];
 
 if(globalThis.__TP_TEST__){            // exposition pour les tests automatiques
  const tp={};NS.forEach(n=>Object.keys(n).forEach(k=>{if(k!=='init')tp[k]=n[k]}));
@@ -52,6 +58,9 @@ m_transmap.init();
 m_poi.init();
 m_home.init();
 m_trip.init();
+m_tools.init();
+m_revetement.init();
+m_exportgpx.init();
 m_app.init();
 
 if('serviceWorker' in navigator&&location.protocol.startsWith('http')){
