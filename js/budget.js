@@ -10,6 +10,7 @@ import {settle} from './lib/money.js';
 export function expenses(){
  const E=[],P=S.D.participants;
  S.D.stages.forEach((s,i)=>{const L=lodgOf(s),a=+L.price;if(L.status==='na'||!(a>0))return;E.push({src:'auto',label:'J'+(i+1)+' · 🛏 '+(L.name||'Hébergement'),amt:a,payer:L.payer||'',who:forList(L)})});
+ {const L=S.D.preLodging,a=+(L&&L.price);if(L&&L.status!=='na'&&a>0)E.push({src:'auto',label:'Veille de J1 · 🛏 '+(L.name||'Hébergement'),amt:a,payer:L.payer||'',who:forList(L)})}
  S.D.transports.forEach(t=>{const a=+t.price;if(!(a>0))return;E.push({src:'auto',label:(t.dir==='out'?'Aller':'Retour')+' · '+(MODES[t.mode]||MODES.other)[0]+' '+(t.from||'?')+' → '+(t.to||'?'),amt:a,payer:t.payer||'',who:(t.who==='*'||!P.includes(t.who))?P:[t.who]})});
  S.D.spend.forEach(x=>{const a=+x.amt;if(!(a>0))return;E.push({src:'m',id:x.id,label:x.label||'Dépense',amt:a,payer:x.payer||'',who:forList(x)})});
  return E;
