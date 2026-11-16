@@ -1,6 +1,6 @@
 /* Itinéraire automatique ou manuel (piéton, voiture, tronçons forcés), calque GR. */
 import {dm} from './lib/geo.js';
-import {$, sleep} from './lib/util.js';
+import {$, fetchT, sleep} from './lib/util.js';
 import {S} from './state.js';
 import {hasGh} from './github.js';
 import {changed} from './store.js';
@@ -22,6 +22,23 @@ export function setAuto(v,silent){
  if(v&&!silent){autoRoute(cur());autoFill()}
 }
 export function autoRoute(s){if(!S.autoOn||!s||s.points.length<2)return;clearTimeout(S.at);S.at=setTimeout(()=>routeStage(s,true),900)}
+/* Calcule un itinéraire entre des repères. mode : foot | bike | car ; engine : osrm (OSM standard) | brouter (sentiers, essai, repli automatique sur osrm). */
+export async function fetchRoute(pts,mode,engine){
+ const co=pts.map(p=>p[1]+','+p[0]);
+ if(engine==='brouter'){
+  try{
+   const prof={foot:'hiking-mountain',bike:'trekking',car:'car-fast'}[mode]||'hiking-mountain';
+   const r=await fetchT('https://brouter.de/brouter?lonlats='+co.join('|')+'&profile='+prof+'&alternativeidx=0&format=geojson',25000);
+   const j=await r.json(),f=j.features&&j.features[0];
+   if(!f||!f.geometry)throw new Error('réponse vide');
+   return{coords:f.geometry.coordinates.map(c=>[c[1],c[0]]),km:(+f.properties['track-length']||0)/1000,sec:+f.properties['total-time']||0,engine:'brouter'};
+  }catch(e){warnOnce('brouter','BRouter indisponible : l’itinéraire est calculé avec le moteur OSM standard.')}
+ }
+ const r=await fetchT('https://routing.openstreetmap.de/routed-'+mode+'/route/v1/driving/'+co.join(';')+'?overview=full&geometries=geojson',25000);
+ const j=await r.json();
+ if(j.code!=='Ok')throw new Error(j.message||j.code||('HTTP '+r.status));
+ return{coords:j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]),km:j.routes[0].distance/1000,sec:j.routes[0].duration,engine:'osrm'};
+}
 export async function routeStage(s,quiet,noElev){
  if(!s||s.points.length<2)return quiet||toast('Place au moins 2 repères sur la carte (✏ Tracer).');
  quiet||toast('Calcul de l’itinéraire à pied…');
@@ -29,7 +46,7 @@ export async function routeStage(s,quiet,noElev){
  try{
   let out=[],km=0;
   const add=q=>{if(!out.length||dm(out[out.length-1],q)>20)out.push([+q[0].toFixed(5),+q[1].toFixed(5)])};
-  const mode=s.rmode==='car'?'car':'foot',segs=[];
+  const mode=s.rmode==='car'||s.rmode==='bike'?s.rmode:'foot',engine=s.engine==='brouter'?'brouter':'osrm',segs=[];
   let run=[pts[0]];
   for(let j=1;j<pts.length;j++){
    if(pts[j][2]){if(run.length>1)segs.push({pts:run});segs.push({pts:[pts[j-1],pts[j]],direct:true});run=[pts[j]]}
@@ -39,11 +56,9 @@ export async function routeStage(s,quiet,noElev){
   for(const sg of segs){
    if(sg.direct){sg.pts.forEach(add);km+=dm(sg.pts[0],sg.pts[1])/1000;continue}
    for(let i=0;i<sg.pts.length-1;i+=19){
-    const co=sg.pts.slice(i,i+20).map(p=>p[1]+','+p[0]).join(';');
-    const r=await fetch('https://routing.openstreetmap.de/routed-'+mode+'/route/v1/driving/'+co+'?overview=full&geometries=geojson');
-    const j=await r.json();if(j.code!=='Ok')throw 0;
-    km+=j.routes[0].distance/1000;
-    j.routes[0].geometry.coordinates.forEach(([lo,la])=>add([la,lo]));
+    const r=await fetchRoute(sg.pts.slice(i,i+20),mode,engine);
+    km+=r.km;
+    r.coords.forEach(add);
    }
   }
   if(rtTok.get(s.id)!==my)return;
