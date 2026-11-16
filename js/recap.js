@@ -6,6 +6,8 @@ import {coverMap, lodgOf, nightsList} from './lodging.js';
 import {transCheck} from './transports.js';
 import {expenses} from './budget.js';
 import {poiRecapHtml} from './poi.js';
+import {surfRecapHtml} from './revetement.js';
+import {gpxRecapHtml} from './exportgpx.js';
 
 export function profAll(){
  const parts=S.D.stages.map((s,i)=>({s,i})).filter(x=>x.s.elev&&x.s.elev.d&&x.s.elev.d.length>1);
@@ -25,6 +27,7 @@ export function checksHtml(){
  m.push(...transCheck());
  const td=iso(new Date()),lim=addD(td,14);
  S.D.stages.forEach((s,i)=>{const L=lodgOf(s);if(L.cancelBy&&(L.status==='booked'||L.status==='todo')&&L.cancelBy>=td&&L.cancelBy<=lim)m.push('J'+(i+1)+' '+(L.name||'hébergement')+' : annulation gratuite jusqu’au '+fmtD(L.cancelBy))});
+ {const L=S.D.preLodging;if(L&&L.cancelBy&&(L.status==='booked'||L.status==='todo')&&L.cancelBy>=td&&L.cancelBy<=lim)m.push((L.name||'Hébergement d’arrivée')+' : annulation gratuite jusqu’au '+fmtD(L.cancelBy))}
  const np=expenses().filter(e=>!e.payer).length;if(np)m.push(np+' dépense(s) sans payeur défini');
  return m.length?'<div class="sec"><span>À vérifier</span></div>'+m.map(x=>`<p><span class="chip warn">⚠ ${esc(x)}</span></p>`).join(''):'<p><span class="chip ok">✅ Rien à signaler</span></p>';
 }
@@ -45,6 +48,6 @@ export function renderRecap(){
   h+='<div class="sec"><span>Statistiques</span></div><div class="stats">'+t+'</div>';
   if(E.length<A.length)h+=`<p class="meta">Dénivelé calculé pour ${E.length} jour(s) sur ${A.length}.</p>`;
  }
- h+=profAll()+poiRecapHtml();
+ h+=profAll()+poiRecapHtml()+surfRecapHtml()+gpxRecapHtml();
  el.innerHTML=h;
 }
