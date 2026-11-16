@@ -17,7 +17,7 @@ export const openC=new Set();
 export const hdTxt=(s,i)=>`<b>J${i+1} · ${esc(s.name)}</b><span class="meta">${fmtD(s.date)||'date ?'} · ${dist(s).toFixed(1)} km${s.elev?' · ↗ '+s.elev.up+' m':''}</span>`;
 export const body=s=>{const L=lodgOf(s);return `<div class="bd">
  <div class="row"><input data-f="name" value="${esc(s.name)}"><input type="date" data-f="date" value="${esc(s.date)}"></div>
- <div class="meta">${s.points.length} repère(s) · ${okRoute(s)?(s.rmode==='car'?'itinéraire en voiture':'itinéraire à pied'):s.route?'itinéraire à recalculer':'ligne droite'}</div>${elevHtml(s)}${poiLine(s)}
+ <div class="meta">${s.points.length} repère(s) · ${okRoute(s)?(s.rmode==='car'?'itinéraire en voiture':s.rmode==='bike'?'itinéraire à vélo':'itinéraire à pied'):s.route?'itinéraire à recalculer':'ligne droite'}</div>${elevHtml(s)}${poiLine(s)}
  <details data-k="l" data-id="${s.id}" ${openC.has('l'+s.id)?'open':''}><summary>Hébergement ${chip(s,0)}</summary><div class="lodg">
   <input data-l="name" placeholder="Nom de l’hébergement" value="${esc(L.name)}">
   <input data-l="address" placeholder="Adresse" value="${esc(L.address)}">
