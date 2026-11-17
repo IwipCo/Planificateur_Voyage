@@ -6,7 +6,7 @@ export const clone=v=>v===undefined?undefined:JSON.parse(JSON.stringify(v));
 export const eq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const isObj=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 /* valeurs remplacées d'un bloc (tracés, profils, listes de noms…) */
-export const ATOMIC=new Set(['points','route','elev','surf','participants','tabsOff','for','homes','poiCov','cover']);
+export const ATOMIC=new Set(['points','route','elev','participants','tabsOff','for','homes','poiCov','cover']);
 /* listes d'objets portant un « id » : fusionnées élément par élément */
 export const IDLISTS=new Set(['trips','stages','transports','messages','chat','checklist','spend','payments','pois']);
 
