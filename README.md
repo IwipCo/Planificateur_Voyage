@@ -20,9 +20,11 @@ js/mapcore.js, map.js    carte Leaflet, fonds, calques, dessin et édition des p
 js/routing.js            itinéraires (piéton / voiture / tronçons forcés)
 js/elevation.js          dénivelé et profil
 js/poi.js                points d’intérêt (chargement par tronçons en arrière-plan)
+js/tools.js              échelle, repères km, règle, inversion du sens d’un jour
+js/exportgpx.js          export GPX d’un jour ou du voyage
 js/stages.js lodging.js transports.js budget.js checklist.js recap.js chat.js weather.js …
 js/home.js trip.js app.js   accueil, configuration du voyage, rendu global
-js/lib/*.js              logique pure, sans DOM (géométrie, stats d’un jour, argent, POI, utilitaires)
+js/lib/*.js              logique pure, sans DOM (géométrie, tracés, stats d’un jour, argent, POI, GPX, fusion, utilitaires)
 vendor/leaflet/          Leaflet 1.9.4 hébergé avec l’appli (plus de dépendance à un CDN)
 sw.js                    service worker : l’appli s’ouvre aussi hors ligne
 manifest.webmanifest     icône et installation sur l’écran d’accueil
@@ -30,6 +32,14 @@ icons/                   icônes
 tests/                   tests automatiques (unitaires + parcours complets)
 ```
 Les modules `js/lib/` n’utilisent ni le navigateur ni Leaflet : ils sont testés directement avec Node.
+
+## Travail à plusieurs : on ne pousse que ses changements
+À chaque enregistrement, l'appli relit `data.json`, calcule **ce que toi seul as modifié** depuis ton dernier chargement,
+puis applique ces changements sur la version la plus récente avant d'écrire (fusion à trois voies, `js/lib/merge.js`).
+- Un autre jour, un autre champ, un autre trajet, un autre voyage modifié ailleurs : **jamais écrasé**.
+- Messages, éléments de checklist, dépenses, points d'intérêt ajoutés des deux côtés : tous conservés.
+- Même champ modifié des deux côtés : **ta version l'emporte** (un tracé ou un profil se remplace d'un bloc).
+- Si quelqu'un écrit pendant ton enregistrement (conflit), l'appli relit, refusionne et réessaie toute seule.
 
 ## Mises à jour
 Le service worker essaie toujours le réseau d’abord : une nouvelle version publiée s’affiche dès le rechargement
