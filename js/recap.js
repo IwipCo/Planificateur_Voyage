@@ -6,7 +6,6 @@ import {coverMap, lodgOf, nightsList} from './lodging.js';
 import {transCheck} from './transports.js';
 import {expenses} from './budget.js';
 import {poiRecapHtml} from './poi.js';
-import {surfRecapHtml} from './revetement.js';
 import {gpxRecapHtml} from './exportgpx.js';
 
 export function profAll(){
@@ -48,6 +47,6 @@ export function renderRecap(){
   h+='<div class="sec"><span>Statistiques</span></div><div class="stats">'+t+'</div>';
   if(E.length<A.length)h+=`<p class="meta">Dénivelé calculé pour ${E.length} jour(s) sur ${A.length}.</p>`;
  }
- h+=profAll()+poiRecapHtml()+surfRecapHtml()+gpxRecapHtml();
+ h+=profAll()+poiRecapHtml()+gpxRecapHtml();
  el.innerHTML=h;
 }
