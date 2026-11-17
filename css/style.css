@@ -90,15 +90,12 @@ dialog[open]{display:flex;flex-direction:column;height:auto;max-height:90vh;max-
 dialog label{display:block;margin:8px 0 2px;font-size:13px;color:var(--mute)}
 dialog p{font-size:13px;color:var(--mute)}
 
-/* ---- v2.1 : échelle, règle, repères km, revêtement, filtres de carte ---- */
+/* ---- v2.1 : échelle, règle, repères km, filtres de carte ---- */
 #mapwrap{position:relative}
 #rulbox{position:absolute;left:8px;bottom:34px;z-index:800;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;max-width:270px;box-shadow:0 2px 8px #0004;font-size:13px}
 #rulbox[hidden]{display:none}.rh{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .rpt{width:22px;height:22px;border-radius:50%;background:#e03131;color:#fff;font:700 12px/18px system-ui;text-align:center;border:2px solid #fff;box-shadow:0 0 3px #0008}
 .kmm{background:var(--card);color:var(--ink);border:2px solid;border-radius:9px;font:600 10px/14px system-ui;text-align:center;padding:0 3px;white-space:nowrap;box-shadow:0 0 2px #0006}
-.srow{display:flex;align-items:center;gap:8px;margin:5px 0}.srow>span:first-child{width:26px;font-weight:600}.sbc{flex:1;min-width:0}
-.sb{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line)}.sb i{display:block;height:100%}
-.sdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
 input[type=radio]{width:auto}
 .leaflet-control-layers-selector{width:auto;padding:0;border:0;background:none;margin:0 6px 0 0;vertical-align:middle}
 .leaflet-control-layers-base label>span,.leaflet-control-layers-overlays label>span{display:flex;align-items:center;white-space:nowrap}
