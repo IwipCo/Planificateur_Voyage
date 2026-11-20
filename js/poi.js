@@ -9,6 +9,8 @@ import {renderList} from './stages.js';
 import {POI_T, poiQuery, poiType} from './lib/poi.js';
 import {chunkInfo, proj} from './lib/geo.js';
 
+let favOnly=localStorage.getItem('tp_poifav')==='1';      // « afficher uniquement mes favoris »
+
 export const poiShow=Object.assign({water:1,camp:1,shelter:1,gite:1,bnb:1,hotel:1,wc:1,bar:1,resto:1,shop:1,view:1,danger:1,other:1},JSON.parse(localStorage.getItem('tp_poishow')||'{}'));
 export function locate(lat,lng){
  let best=null;
@@ -18,12 +20,14 @@ export function locate(lat,lng){
 export function drawPois(){
  poiLayer.clearLayers();if(!S.poiOn)return;
  (S.D.pois||[]).forEach(x=>{
-  if(!poiShow[x.type])return;
+  if(favOnly?!x.fav:!poiShow[x.type])return;           // favoris seuls : on ignore le filtre par type
   const t=POI_T[x.type]||POI_T.other,j=S.D.stages.findIndex(s=>s.id===x.sid);
-  const m=L.marker([x.lat,x.lng],{icon:L.divIcon({className:'',iconSize:[26,26],html:`<div class="poi">${t.e}</div>`})}).addTo(poiLayer);
+  const m=L.marker([x.lat,x.lng],{icon:L.divIcon({className:'',iconSize:[26,26],html:`<div class="poi${x.fav?' fav':''}">${t.e}${x.fav?'<i class="star">★</i>':''}</div>`})}).addTo(poiLayer);
   const box=document.createElement('div');
   box.innerHTML=`<b>${esc(x.name||t.l)}</b><br><span class="meta">${t.l}${j>=0?' · J'+(j+1)+' · km '+x.km+' · à '+x.off+' m':''}</span>${x.note?'<br>'+esc(x.note):''}${x.src==='osm'?'<br><span class="meta">© OpenStreetMap</span>':''}<br>`;
   const b=document.createElement('button');b.textContent='✏ Modifier';b.onclick=()=>{map.closePopup();openPoiDlg(x.id)};box.appendChild(b);
+  const bf=document.createElement('button');bf.textContent=x.fav?'★ Retirer des favoris':'☆ Mettre en favori';
+  bf.onclick=()=>{if(x.fav)delete x.fav;else x.fav=true;map.closePopup();changed();drawPois();favCount()};box.appendChild(bf);
   m.bindPopup(box);
  });
 }
@@ -83,8 +87,8 @@ export function renderCov(){
 }
 export function drawCov(){
  covLayer.clearLayers();
- const bt=$('#bcov');bt.classList.toggle('on',S.covOn);
- if(!S.covOn){bt.textContent='🧩 Tronçons';return}
+ const bt=$('#pd-covmap');bt.classList.toggle('on',S.covOn);
+ if(!S.covOn){bt.textContent='🧩 Voir sur la carte';return}
  let miss=0;
  S.D.stages.forEach((s,i)=>{
   if(s.points.length<2)return;
@@ -100,7 +104,7 @@ export function drawCov(){
    }
   });
  });
- bt.textContent='🧩 À charger : '+miss;
+ bt.textContent='🧩 Masquer sur la carte ('+miss+' à charger)';
 }
 export function setCov(v){
  S.covOn=v;localStorage.setItem('tp_cov',v?'1':'0');drawCov();
@@ -193,9 +197,10 @@ export function startPoi(mode,sid,idx){
  toast('Chargement lancé en arrière-plan ('+tasks.length+' tronçon(s)). Tu peux fermer cette fenêtre et continuer.');
  runPoi(S.poiJob);
 }
+const favCount=()=>{const n=S.D.pois.filter(x=>x.fav).length;const e=$('#pd-favn');if(e)e.textContent='('+n+')'};
 export function updPoiCount(){const n=S.D.pois.length,o=S.D.pois.filter(x=>x.src==='osm').length;$('#pd-count').textContent=n+' point(s) enregistré(s) dont '+o+' importé(s).'}
 export function openPoiMgr(){
- $('#pd-on').checked=S.poiOn;
+ $('#pd-on').checked=S.poiOn;$('#pd-fav').checked=favOnly;favCount();
  $('#pd-cats').innerHTML=Object.entries(POI_T).map(([k,t])=>`<label class="pcat${poiShow[k]?' on':''}"><input type="checkbox" data-pc="${k}" ${poiShow[k]?'checked':''}><span class="pe">${t.e}</span><span class="pl">${t.l}</span></label>`).join('');
  $('#pd-msg').textContent='';updPoiCount();updJobUI();renderCov();$('#pdlg').showModal();
 }
@@ -207,7 +212,7 @@ export function openPoiDlg(id,ll){
   S.PE={obj:t,isNew:true};
  }
  const x=S.PE.obj,j=S.D.stages.findIndex(v=>v.id===x.sid);
- $('#po-name').value=x.name||'';$('#po-type').value=x.type;$('#po-note').value=x.note||'';
+ $('#po-fav').checked=!!x.fav;$('#po-name').value=x.name||'';$('#po-type').value=x.type;$('#po-note').value=x.note||'';
  $('#po-info').textContent=(x.src==='osm'?'Source : OpenStreetMap':'Ajouté à la main')+(j>=0?' · J'+(j+1)+' · km '+x.km+' · à '+x.off+' m de l’itinéraire':'');
  $('#po-del').hidden=S.PE.isNew;$('#podlg').showModal();
 }
@@ -219,10 +224,10 @@ $('#pd-cov').addEventListener('click',e=>{
  if(b.dataset.cv==='chunk')startPoi('chunk',b.dataset.sid,+b.dataset.i);
  if(b.dataset.cv==='day')startPoi('day',b.dataset.sid);
 });
-$('#bcov').onclick=()=>setCov(!S.covOn);
-$('#pd-covmap').onclick=()=>{setCov(true);$('#pdlg').close()};
+$('#pd-covmap').onclick=()=>{setCov(!S.covOn);if(S.covOn)$('#pdlg').close()};
 $('#bpoi').onclick=openPoiMgr;
 $('#pd-x').onclick=()=>$('#pdlg').close();
+$('#pd-fav').onchange=e=>{favOnly=e.target.checked;localStorage.setItem('tp_poifav',favOnly?'1':'0');drawPois()};
 $('#pd-on').onchange=e=>{S.poiOn=e.target.checked;localStorage.setItem('tp_poi',S.poiOn?'1':'0');drawPois()};
 $('#pd-cats').addEventListener('change',e=>{const k=e.target.dataset.pc;if(!k)return;poiShow[k]=e.target.checked?1:0;e.target.closest('.pcat').classList.toggle('on',e.target.checked);localStorage.setItem('tp_poishow',JSON.stringify(poiShow));drawPois()});
 $('#pd-search').onclick=()=>S.poiJob?stopPoi():startPoi();
@@ -231,7 +236,7 @@ $('#pd-add').onclick=()=>{$('#pdlg').close();S.addPoiMode=true;map.getContainer(
 $('#pd-clear').onclick=()=>{if(!confirm('Supprimer tous les points importés d’OpenStreetMap ? (tes points ajoutés à la main sont conservés)'))return;S.D.pois=S.D.pois.filter(x=>x.src!=='osm');S.D.poiCov={};changed();drawPois();renderList();updPoiCount();renderCov();drawCov()};
 $('#po-x').onclick=()=>$('#podlg').close();
 $('#po-ok').onclick=()=>{
- const x=S.PE.obj;x.name=$('#po-name').value.trim();x.type=$('#po-type').value;x.note=$('#po-note').value.trim();
+ const x=S.PE.obj;if($('#po-fav').checked)x.fav=true;else delete x.fav;x.name=$('#po-name').value.trim();x.type=$('#po-type').value;x.note=$('#po-note').value.trim();
  if(S.PE.isNew)S.D.pois.push(x);
  changed();drawPois();renderList();$('#podlg').close();
 };
