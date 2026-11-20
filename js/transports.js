@@ -6,6 +6,7 @@ import {changed} from './store.js';
 import {LS, forList, preDate} from './lodging.js';
 import {openC, renderList} from './stages.js';
 import {schedGeo} from './transmap.js';
+import {clearPin, startPin} from './lodgmap.js';
 
 export const openT=new Set();
 export const MODES={train:['🚆','Train'],car:['🚗','Voiture'],plane:['✈️','Avion'],bus:['🚌','Bus'],other:['🧭','Autre']};
@@ -40,6 +41,7 @@ const lodgBlock=()=>{
   <input data-lf="address" placeholder="Adresse" value="${esc(L.address)}">
   <div class="row"><input data-lf="price" type="number" min="0" step="1" placeholder="Prix total (€)" value="${esc(L.price)}"><input data-lf="nights" type="number" min="1" max="30" step="1" style="width:64px" title="Nombre de nuits" value="${L.nights||1}"><span class="meta">nuit(s)</span></div>
   <div class="row"><span class="meta">Annulation gratuite jusqu’au</span><input type="date" data-lf="cancelBy" value="${esc(L.cancelBy)}"></div>
+  <div class="row"><button data-a="lpin">📍 ${L.ll?'Déplacer sur la carte':'Placer sur la carte'}</button>${L.ll?'<button data-a="lclr" title="Retirer de la carte" aria-label="Retirer de la carte">✕</button>':''}</div>
   <div class="row"><select data-lf="status">${Object.entries(LS).map(([k,v])=>`<option value="${k}" ${L.status===k?'selected':''}>${v[1]}</option>`).join('')}</select>
   <select data-lf="payer"><option value="">Payé par ?</option>${S.D.participants.map(p=>`<option value="${esc(p)}" ${L.payer===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
   <div class="meta">Concerne :</div><div class="row" style="flex-wrap:wrap">${S.D.participants.map(p=>`<label class="chk"><input type="checkbox" data-lfor="${esc(p)}" ${forList(L).includes(p)?'checked':''}>${esc(p)}</label>`).join('')}</div>
@@ -59,6 +61,8 @@ export function transClick(e,c){
   if(dir==='out')t.to=autoPlace(S.D.stages[0],false);else t.from=autoPlace(S.D.stages[S.D.stages.length-1],true);
   S.D.transports.push(t);openT.add('d'+dir);openT.add('l'+t.id);changed();renderList();schedGeo();return;
  }
+ if(a==='lpin'){startPin(S.D.preLodging,'Veille de J1');return}
+ if(a==='lclr'){clearPin(S.D.preLodging);renderList();return}
  if(a==='ltog'){const k='l'+id;openT.has(k)?openT.delete(k):openT.add(k);renderList();return}
  if(a==='ldel'&&confirm('Supprimer ce trajet ?')){S.D.transports=S.D.transports.filter(t=>t.id!==id);changed();renderList();schedGeo()}
 }
