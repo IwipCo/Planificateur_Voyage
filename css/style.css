@@ -100,3 +100,11 @@ input[type=radio]{width:auto}
 .leaflet-control-layers-selector{width:auto;padding:0;border:0;background:none;margin:0 6px 0 0;vertical-align:middle}
 .leaflet-control-layers-base label>span,.leaflet-control-layers-overlays label>span{display:flex;align-items:center;white-space:nowrap}
 .leaflet-control-layers label{margin:2px 0}
+
+/* ---- v2.2 : position, hébergements sur la carte, favoris ---- */
+.me{width:18px;height:18px;border-radius:50%;background:#1c7ed6;border:3px solid #fff;box-shadow:0 0 0 2px #1c7ed6,0 0 8px #0008;animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 2px #1c7ed6,0 0 0 2px #1c7ed688}70%{box-shadow:0 0 0 2px #1c7ed6,0 0 0 14px #1c7ed600}100%{box-shadow:0 0 0 2px #1c7ed6,0 0 0 2px #1c7ed600}}
+.lgm{width:30px;height:30px;border-radius:9px;background:var(--card);border:3px solid;font:16px/24px system-ui;text-align:center;box-shadow:0 0 4px #0007}
+.lgm.ok{border-color:#2f9e44}.lgm.warn{border-color:#f08c00}
+.poi.fav{position:relative;border-color:var(--gorse);box-shadow:0 0 0 2px var(--gorse)}
+.poi .star{position:absolute;top:-9px;right:-7px;font-size:13px;line-height:1;font-style:normal;color:var(--gorse);text-shadow:0 0 2px #000}
