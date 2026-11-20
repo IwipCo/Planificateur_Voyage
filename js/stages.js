@@ -11,6 +11,7 @@ import {chatHtml, renderStageChats} from './chat.js';
 import {LS, chip, forList, lodgOf, renderLodg} from './lodging.js';
 import {openT, transCard, transClick, transInput} from './transports.js';
 import {poiLine} from './poi.js';
+import {clearPin, startPin} from './lodgmap.js';
 
 export const openS=new Set();
 export const openC=new Set();
@@ -23,6 +24,7 @@ export const body=s=>{const L=lodgOf(s);return `<div class="bd">
   <input data-l="address" placeholder="Adresse" value="${esc(L.address)}">
   <div class="row"><input data-l="price" type="number" min="0" step="1" placeholder="Prix total (€)" value="${esc(L.price)}"><input data-l="nights" type="number" min="1" max="30" step="1" style="width:64px" title="Nombre de nuits" value="${L.nights||1}"><span class="meta">nuit(s)</span></div>
   <div class="row"><span class="meta">Annulation gratuite jusqu’au</span><input type="date" data-l="cancelBy" value="${esc(L.cancelBy)}"></div>
+  <div class="row"><button data-a="lpin">📍 ${L.ll?'Déplacer sur la carte':'Placer sur la carte'}</button>${L.ll?'<button data-a="lclr" title="Retirer de la carte" aria-label="Retirer de la carte">✕</button>':''}</div>
   <div class="row"><select data-l="status">${Object.entries(LS).map(([k,v])=>`<option value="${k}" ${L.status===k?'selected':''}>${v[1]}</option>`).join('')}</select>
   <select data-l="payer"><option value="">Payé par ?</option>${S.D.participants.map(p=>`<option value="${esc(p)}" ${L.payer===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
   <div class="meta">Concerne :</div><div class="row" style="flex-wrap:wrap">${S.D.participants.map(p=>`<label class="chk"><input type="checkbox" data-lfor="${esc(p)}" ${forList(L).includes(p)?'checked':''}>${esc(p)}</label>`).join('')}</div>
@@ -81,6 +83,8 @@ $('#list').addEventListener('click',e=>{
  if(!a){if(S.sel!==id){S.sel=id;document.querySelectorAll('.card[data-id]').forEach(x=>x.classList.toggle('on',x.dataset.id===id));if(S.view==='day')drawMap(true);else drawMap()}return}
  S.sel=id;
  if(a==='tog'){if(!S.reorg){openS.has(id)?openS.delete(id):openS.add(id)}renderList();if(S.view==='day')drawMap(true);else drawMap();return}
+ if(a==='lpin'){startPin(lodgOf(S.D.stages[i]),'J'+(i+1));return}
+ if(a==='lclr'){clearPin(lodgOf(S.D.stages[i]));renderList();return}
  if(a==='csend'){stageSend(S.D.stages[i],c);return}
  if(a==='wx'){loadWx(S.D.stages[i]);return}
  if(a==='up'&&i>0){[S.D.stages[i-1],S.D.stages[i]]=[S.D.stages[i],S.D.stages[i-1]];changed()}
