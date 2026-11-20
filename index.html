@@ -39,7 +39,8 @@
    <button id="brul" title="Règle : mesurer entre deux points (vol d’oiseau ou itinéraire)">📏 Règle</button>
    <button id="bkm" title="Repères kilométriques le long du tracé (le pas change avec le zoom)">🏁 Repères km</button>
    <button id="bpoi" title="Points d’intérêt : eau, commerces, camping…">📍 Points</button>
-   <button id="bcov" title="Voir sur la carte les tronçons dont les points d’intérêt ne sont pas chargés">🧩 Tronçons</button>
+   <button id="blodg" title="Afficher les hébergements sur la carte (d’après l’adresse ou un point placé à la main)">🛏 Hébergements</button>
+   <button id="bpos" title="Afficher ma position en direct (GPS)">📡 Ma position</button>
    <button id="poistat" hidden title="Recherche de points d’intérêt en cours : toucher pour voir ou arrêter">⏳</button>
    <div id="editbar" hidden>
     <select id="rmode" title="Mode de calcul de l’itinéraire"><option value="foot">🥾 Piéton</option><option value="bike">🚴 Vélo</option><option value="car">🚗 Voiture</option></select>
@@ -85,6 +86,7 @@
 <div class="dlg-b">
  <h3 style="margin:0 0 4px">Points d’intérêt</h3>
  <label class="chk"><input type="checkbox" id="pd-on"> Afficher sur la carte</label>
+ <label class="chk"><input type="checkbox" id="pd-fav"> ★ Afficher uniquement mes favoris <span class="meta" id="pd-favn"></span></label>
  <div class="meta" style="margin-top:8px">Types affichés sur la carte (et chargés) :</div><div id="pd-cats"></div>
  <div class="sec" style="margin-top:12px"><span>Chargement des points d’intérêt</span></div>
  <div class="row"><select id="pd-r"><option value="200">à 200 m du tracé</option><option value="500" selected>à 500 m du tracé</option><option value="1000">à 1 km du tracé</option></select><button id="pd-covmap" title="Colorer sur la carte les tronçons selon leur état de chargement">🧩 Voir sur la carte</button></div>
@@ -105,6 +107,7 @@
  <p class="meta" id="po-info"></p>
  <label>Nom</label><input id="po-name" placeholder="Ex. Fontaine du bourg">
  <label>Type</label><select id="po-type"></select>
+ <label class="chk"><input type="checkbox" id="po-fav"> ★ Favori</label>
  <label>Note</label><textarea id="po-note" rows="3" placeholder="Horaires, potabilité, accès…"></textarea>
 </div>
 <div class="dlg-f"><button id="po-del" class="danger" title="Supprimer ce point">🗑 Supprimer</button><span style="flex:1"></span><button id="po-ok" class="pri">Valider</button><button id="po-x">Fermer</button></div>
