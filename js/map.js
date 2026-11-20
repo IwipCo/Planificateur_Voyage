@@ -23,7 +23,11 @@ export function drawMap(fit){
   if(S.view==='all'){
    L.marker(midOf(okRoute(s)?s.route:s.points),{icon:L.divIcon({className:'',iconSize:[28,28],html:`<div class="dayb" style="background:${col}">J${i+1}</div>`})}).on('click',()=>goStage(s.id)).addTo(layer);
   }else{
-   s.points.forEach((p,j)=>{
+   if(!S.draw){                                       // hors mode « modifier l'itinéraire » : lecture seule (départ et arrivée, sans poignées)
+    L.circleMarker(s.points[0],{radius:7,color:'#fff',weight:2,fillColor:'#2f9e44',fillOpacity:1,interactive:false}).addTo(layer);
+    L.circleMarker(s.points[s.points.length-1],{radius:7,color:'#fff',weight:2,fillColor:'#e03131',fillOpacity:1,interactive:false}).addTo(layer);
+   }
+   if(S.draw)s.points.forEach((p,j)=>{
     const m=L.marker(p,{draggable:true,icon:L.divIcon({className:'',iconSize:[22,22],html:`<div class="wp${p[2]?' fl':''}" style="background:${col}">${j+1}</div>`})}).addTo(layer);
     m.on('dragend',e=>{pushUndo(s);const l=e.target.getLatLng();s.points[j]=[+l.lat.toFixed(5),+l.lng.toFixed(5),...(s.points[j][2]?[1]:[])];changed();autoRoute(s);drawMap();renderList()});
     const box=document.createElement('div');box.style.cssText='display:flex;flex-direction:column;gap:6px';
