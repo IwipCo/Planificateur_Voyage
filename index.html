@@ -32,16 +32,21 @@
 <main>
  <div id="mapwrap">
   <div id="bar">
+   <div id="barrow">
+   <button id="bfull" title="Carte en plein écran">⛶</button>
    <span class="seg" role="group" aria-label="Affichage de la carte"><button id="vall" title="Afficher tous les jours du voyage sur la carte">🗺 Tous les jours</button><button id="vday" title="Afficher uniquement le jour sélectionné">📅 Jour choisi</button></span>
    <button id="bdraw" title="Poser, déplacer ou insérer des points sur la carte">✏ Modifier l’itinéraire</button>
    <button id="bgr" title="Afficher ou masquer les sentiers de grande randonnée (GR…)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align:-3px"><rect x="1.5" y="2" width="13" height="5.5" fill="#fff" stroke="#8a8a8a" stroke-width=".7"/><rect x="1.5" y="7.5" width="13" height="5.5" fill="#d62828" stroke="#8a8a8a" stroke-width=".7"/></svg> Sentiers GR</button>
    <button id="btr" title="Afficher ou masquer les trajets aller / retour">🚆 Trajets</button>
    <button id="brul" title="Règle : mesurer entre deux points (vol d’oiseau ou itinéraire)">📏 Règle</button>
    <button id="bkm" title="Repères kilométriques le long du tracé (le pas change avec le zoom)">🏁 Repères km</button>
-   <button id="bpoi" title="Points d’intérêt : eau, commerces, camping…">📍 Points</button>
+   <button id="bpoi" title="Menu des points d’intérêt : types affichés, chargement, ajout">⚙ Points</button>
+   <button id="bpoishow" title="Afficher ou masquer les points d’intérêt (hors favoris)">📍</button>
+   <button id="bfav" title="Afficher ou masquer mes favoris">★</button>
    <button id="blodg" title="Afficher les hébergements sur la carte (d’après l’adresse ou un point placé à la main)">🛏 Hébergements</button>
    <button id="bpos" title="Afficher ma position en direct (GPS)">📡 Ma position</button>
    <button id="poistat" hidden title="Recherche de points d’intérêt en cours : toucher pour voir ou arrêter">⏳</button>
+   </div>
    <div id="editbar" hidden>
     <select id="rmode" title="Mode de calcul de l’itinéraire"><option value="foot">🥾 Piéton</option><option value="bike">🚴 Vélo</option><option value="car">🚗 Voiture</option></select>
     <select id="reng" title="Moteur de calcul : OSM standard, ou BRouter (meilleur sur les sentiers, en test)"><option value="osrm">Moteur : OSM standard</option><option value="brouter">Moteur : BRouter (sentiers, test)</option></select>
@@ -85,8 +90,8 @@
 <dialog id="pdlg">
 <div class="dlg-b">
  <h3 style="margin:0 0 4px">Points d’intérêt</h3>
- <label class="chk"><input type="checkbox" id="pd-on"> Afficher sur la carte</label>
- <label class="chk"><input type="checkbox" id="pd-fav"> ★ Afficher uniquement mes favoris <span class="meta" id="pd-favn"></span></label>
+ <label class="chk"><input type="checkbox" id="pd-on"> Afficher les points d’intérêt</label>
+ <label class="chk"><input type="checkbox" id="pd-fav"> ★ Afficher mes favoris <span class="meta" id="pd-favn"></span></label>
  <div class="meta" style="margin-top:8px">Types affichés sur la carte (et chargés) :</div><div id="pd-cats"></div>
  <div class="sec" style="margin-top:12px"><span>Chargement des points d’intérêt</span></div>
  <div class="row"><select id="pd-r"><option value="200">à 200 m du tracé</option><option value="500" selected>à 500 m du tracé</option><option value="1000">à 1 km du tracé</option></select><button id="pd-covmap" title="Colorer sur la carte les tronçons selon leur état de chargement">🧩 Voir sur la carte</button></div>

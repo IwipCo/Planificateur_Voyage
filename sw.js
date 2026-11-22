@@ -1,7 +1,7 @@
 /* Service worker : mode hors ligne simple.
    - Fichiers de l’application : réseau d’abord (donc toujours à jour quand tu es en ligne), cache en secours.
    - data.json, API GitHub, services de cartes et d’itinéraires : jamais mis en cache ici. */
-const VERSION='tp-2.0.0';
+const VERSION='tp-2.2.0';
 const SHELL=[
  "./",
  "css/style.css",
@@ -15,24 +15,32 @@ const SHELL=[
  "js/checklist.js",
  "js/config.js",
  "js/elevation.js",
+ "js/exportgpx.js",
  "js/github.js",
  "js/home.js",
+ "js/layout.js",
  "js/lib/geo.js",
+ "js/lib/gpx.js",
+ "js/lib/merge.js",
  "js/lib/money.js",
  "js/lib/poi.js",
  "js/lib/stage.js",
+ "js/lib/track.js",
  "js/lib/util.js",
  "js/lodging.js",
+ "js/lodgmap.js",
  "js/main.js",
  "js/map.js",
  "js/mapcore.js",
  "js/names.js",
  "js/poi.js",
+ "js/position.js",
  "js/recap.js",
  "js/routing.js",
  "js/stages.js",
  "js/state.js",
  "js/store.js",
+ "js/tools.js",
  "js/transmap.js",
  "js/transports.js",
  "js/trip.js",
