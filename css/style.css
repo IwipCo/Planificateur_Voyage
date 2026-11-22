@@ -16,7 +16,8 @@ input,textarea,select{background:var(--card);border:1px solid var(--line);border
 main{display:grid;grid-template-rows:42vh 1fr;height:calc(100dvh - 52px)}
 @media(min-width:900px){main{grid-template-columns:430px minmax(0,1fr);grid-template-rows:1fr}#mapwrap{order:2}}
 #mapwrap{display:flex;flex-direction:column;min-height:0}
-#bar{display:flex;flex-wrap:wrap;gap:4px;padding:5px 6px;border-bottom:1px solid var(--line)}
+#bar{padding:5px 6px;border-bottom:1px solid var(--line)}
+#barrow{display:flex;flex-wrap:wrap;gap:4px}
 #bar button{white-space:nowrap;padding:3px 8px;font-size:13px}
 #mapwrap,#panel{min-width:0}
 #map{flex:1;min-height:0}
@@ -108,3 +109,20 @@ input[type=radio]{width:auto}
 .lgm.ok{border-color:#2f9e44}.lgm.warn{border-color:#f08c00}
 .poi.fav{position:relative;border-color:var(--gorse);box-shadow:0 0 0 2px var(--gorse)}
 .poi .star{position:absolute;top:-9px;right:-7px;font-size:13px;line-height:1;font-style:normal;color:var(--gorse);text-shadow:0 0 2px #000}
+
+/* ---- v2.3 : plein écran, téléphone en portrait ---- */
+#mapwrap.mapfull{position:fixed;inset:0;z-index:2500;height:100dvh;background:var(--bg)}
+#editbar{margin-top:4px}
+@media(max-width:899px){
+ #trip:not([hidden]){height:100dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;--hh:52px}
+ #trip.hh{--hh:0px}
+ #trip header{position:sticky;top:0;z-index:30;background:var(--bg);transition:transform .2s}
+ #trip.hh header{transform:translateY(-100%)}
+ main{display:block;height:auto}
+ #mapwrap{height:62dvh;min-height:320px}
+ #mapwrap.mapfull{height:100dvh;min-height:0}
+ #panel{overflow:visible;min-height:calc(100dvh - 60px)}
+ .tabs{top:var(--hh,0px)}
+ #barrow{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+ #barrow>*{flex:none}
+}
