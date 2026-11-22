@@ -72,6 +72,7 @@ export function transInput(e,c){
   const L=S.D.preLodging;
   if(lfor!==undefined){const names=[...c.querySelectorAll('[data-lfor]')].filter(x=>x.checked).map(x=>x.dataset.lfor);L.for=names.length===S.D.participants.length?[]:names}
   else L[lf]=e.target.value;
+  if(L.status==='na'&&['name','address','price','payer'].includes(lf)&&String(e.target.value).trim()){L.status='todo';const sl=c.querySelector('[data-lf=status]');if(sl)sl.value='todo'}   // « Pas de nuit » n'a plus de sens dès qu'on renseigne l'hébergement
   changed();
   const hint=c.querySelector('[data-hint=pre]');if(hint)hint.textContent=preHint();
   const t=LS[L.status]||LS.na,chip=c.querySelector('details[data-k=pl] summary .chip');if(chip){chip.className='chip '+t[2];chip.textContent=t[0]+' '+t[1]}

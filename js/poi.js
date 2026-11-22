@@ -9,7 +9,7 @@ import {renderList} from './stages.js';
 import {POI_T, poiQuery, poiType} from './lib/poi.js';
 import {chunkInfo, proj} from './lib/geo.js';
 
-let favOnly=localStorage.getItem('tp_poifav')==='1';      // « afficher uniquement mes favoris »
+let favOn=localStorage.getItem('tp_favon')!=='0';          // bouton ★ : afficher ou non les favoris (indépendant du bouton 📍)
 
 export const poiShow=Object.assign({water:1,camp:1,shelter:1,gite:1,bnb:1,hotel:1,wc:1,bar:1,resto:1,shop:1,view:1,danger:1,other:1},JSON.parse(localStorage.getItem('tp_poishow')||'{}'));
 export function locate(lat,lng){
@@ -17,10 +17,13 @@ export function locate(lat,lng){
  S.D.stages.forEach(s=>{if(s.points.length<2)return;const pr=proj(okRoute(s)?s.route:s.points,[lat,lng]);if(!best||pr.d<best.off)best={sid:s.id,km:+pr.km.toFixed(2),off:Math.round(pr.d)}});
  return best&&best.off<=1500?best:null;
 }
+function syncPoiBtns(){$('#bpoishow').classList.toggle('on',!!S.poiOn);$('#bfav').classList.toggle('on',favOn)}
+export function setPoiOn(v){S.poiOn=v;localStorage.setItem('tp_poi',v?'1':'0');drawPois();const c=$('#pd-on');if(c)c.checked=v}
+export function setFavOn(v){favOn=v;localStorage.setItem('tp_favon',v?'1':'0');drawPois();const c=$('#pd-fav');if(c)c.checked=v}
 export function drawPois(){
- poiLayer.clearLayers();if(!S.poiOn)return;
+ poiLayer.clearLayers();syncPoiBtns();
  (S.D.pois||[]).forEach(x=>{
-  if(favOnly?!x.fav:!poiShow[x.type])return;           // favoris seuls : on ignore le filtre par type
+  if(x.fav?!favOn:!(S.poiOn&&poiShow[x.type]))return;   // favoris : bouton ★ ; autres points : bouton 📍 et filtre par type
   const t=POI_T[x.type]||POI_T.other,j=S.D.stages.findIndex(s=>s.id===x.sid);
   const m=L.marker([x.lat,x.lng],{icon:L.divIcon({className:'',iconSize:[26,26],html:`<div class="poi${x.fav?' fav':''}">${t.e}${x.fav?'<i class="star">★</i>':''}</div>`})}).addTo(poiLayer);
   const box=document.createElement('div');
@@ -200,7 +203,7 @@ export function startPoi(mode,sid,idx){
 const favCount=()=>{const n=S.D.pois.filter(x=>x.fav).length;const e=$('#pd-favn');if(e)e.textContent='('+n+')'};
 export function updPoiCount(){const n=S.D.pois.length,o=S.D.pois.filter(x=>x.src==='osm').length;$('#pd-count').textContent=n+' point(s) enregistré(s) dont '+o+' importé(s).'}
 export function openPoiMgr(){
- $('#pd-on').checked=S.poiOn;$('#pd-fav').checked=favOnly;favCount();
+ $('#pd-on').checked=S.poiOn;$('#pd-fav').checked=favOn;favCount();
  $('#pd-cats').innerHTML=Object.entries(POI_T).map(([k,t])=>`<label class="pcat${poiShow[k]?' on':''}"><input type="checkbox" data-pc="${k}" ${poiShow[k]?'checked':''}><span class="pe">${t.e}</span><span class="pl">${t.l}</span></label>`).join('');
  $('#pd-msg').textContent='';updPoiCount();updJobUI();renderCov();$('#pdlg').showModal();
 }
@@ -227,8 +230,11 @@ $('#pd-cov').addEventListener('click',e=>{
 $('#pd-covmap').onclick=()=>{setCov(!S.covOn);if(S.covOn)$('#pdlg').close()};
 $('#bpoi').onclick=openPoiMgr;
 $('#pd-x').onclick=()=>$('#pdlg').close();
-$('#pd-fav').onchange=e=>{favOnly=e.target.checked;localStorage.setItem('tp_poifav',favOnly?'1':'0');drawPois()};
-$('#pd-on').onchange=e=>{S.poiOn=e.target.checked;localStorage.setItem('tp_poi',S.poiOn?'1':'0');drawPois()};
+$('#pd-fav').onchange=e=>setFavOn(e.target.checked);
+$('#pd-on').onchange=e=>setPoiOn(e.target.checked);
+$('#bpoishow').onclick=()=>setPoiOn(!S.poiOn);
+$('#bfav').onclick=()=>setFavOn(!favOn);
+syncPoiBtns();
 $('#pd-cats').addEventListener('change',e=>{const k=e.target.dataset.pc;if(!k)return;poiShow[k]=e.target.checked?1:0;e.target.closest('.pcat').classList.toggle('on',e.target.checked);localStorage.setItem('tp_poishow',JSON.stringify(poiShow));drawPois()});
 $('#pd-search').onclick=()=>S.poiJob?stopPoi():startPoi();
 $('#poistat').onclick=openPoiMgr;
