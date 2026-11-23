@@ -47,24 +47,25 @@ if(globalThis.__TP_TEST__){            // exposition pour les tests automatiques
 window.addEventListener('error',e=>{try{toast('Erreur inattendue : '+(e.message||''))}catch(x){}});
 window.addEventListener('unhandledrejection',e=>{try{toast('Erreur inattendue : '+((e.reason&&e.reason.message)||e.reason))}catch(x){}});
 
-// ordre identique à celui du script d’origine
-m_map.init();
-m_routing.init();
-m_stages.init();
-m_lodging.init();
-m_chat.init();
-m_budget.init();
-m_checklist.init();
-m_transmap.init();
-m_poi.init();
-m_home.init();
-m_trip.init();
-m_tools.init();
-m_exportgpx.init();
-m_position.init();
-m_layout.init();
-m_lodgmap.init();
-m_app.init();
+// ordre identique à celui du script d’origine ; une erreur dans un module n'empêche pas les suivants (ni l'application) de démarrer
+const run=f=>{try{f()}catch(e){console.error(e);toast('Erreur au démarrage : '+(e&&e.message||e))}};
+run(m_map.init);
+run(m_routing.init);
+run(m_stages.init);
+run(m_lodging.init);
+run(m_chat.init);
+run(m_budget.init);
+run(m_checklist.init);
+run(m_transmap.init);
+run(m_poi.init);
+run(m_home.init);
+run(m_trip.init);
+run(m_tools.init);
+run(m_exportgpx.init);
+run(m_position.init);
+run(m_layout.init);
+run(m_lodgmap.init);
+run(m_app.init);
 
 if('serviceWorker' in navigator&&location.protocol.startsWith('http')){
  navigator.serviceWorker.register('sw.js').catch(()=>{});      // mode hors ligne (facultatif)
