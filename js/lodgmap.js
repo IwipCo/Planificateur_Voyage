@@ -20,7 +20,7 @@ export function lodgItems(){
  const out=[];
  S.D.stages.forEach((s,i)=>{const lg=lodgOf(s);if(lg.status!=='na')out.push({lg,label:'J'+(i+1),date:s.date,stage:s})});
  const pl=S.D.preLodging;
- if(preActive()||addr(pl)||pl.name||pl.ll)out.push({lg:pl,label:'Veille de J1',date:preDate(),pre:true});
+ if(pl&&(preActive()||addr(pl)||pl.name||pl.ll))out.push({lg:pl,label:'Veille de J1',date:preDate(),pre:true});
  return out;
 }
 const addr=lg=>String(lg.address||'').trim();
